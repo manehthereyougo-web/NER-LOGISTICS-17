@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Road & map · NE8 Corridor</title>
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <!-- Platform Role Switcher Banner -->
+    <div class="role-switcher-banner">
+      <div class="role-switcher-left">
+        <span class="role-switcher-tag" data-i18n="nav_route_map">🗺️ Mountain Road &amp; Map Desk</span>
+        <span style="color: var(--text-muted); font-size: 11px;">
+          Multi-Role Logistics Safety Architecture: Switch to role-specific experience below
+        </span>
+      </div>
+      <div class="role-switcher-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <a class="role-pill-btn" href="trip-planner.html" data-i18n="nav_trip_planner">📅 Trip Planner</a>
+        <a class="role-pill-btn" href="driver.html" data-i18n="nav_driver">Driver PWA</a>
+        <a class="role-pill-btn" href="logistics.html" data-i18n="nav_logistics">Logistics Fleet</a>
+        <a class="role-pill-btn" href="official.html" data-i18n="nav_official">Official Desk</a>
+        <a class="role-pill-btn" href="index.html" data-i18n="nav_overview">Overview</a>
+      </div>
+    </div>
+
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="index.html">
+          <div class="brand-mark">NE8</div>
+          <div>
+            <strong data-i18n="app_title">NE8 Corridor</strong>
+            <span data-i18n="app_subtitle">Eight Northeast states only</span>
+          </div>
+        </a>
+        <nav class="top-nav">
+          <a href="index.html" data-i18n="nav_dashboard">Dashboard</a>
+          <a href="trip-planner.html" data-i18n="nav_trip_planner">📅 Trip Planner</a>
+          <a href="driver.html">Driver PWA</a>
+          <a href="logistics.html">Logistics Fleet</a>
+          <a href="official.html">Official Desk</a>
+          <a class="is-active" href="routes.html" data-i18n="nav_routes">Road &amp; map</a>
+          <a href="incidents.html" data-i18n="nav_incidents">Disaster photos</a>
+        </nav>
+        <div class="top-meta" data-clock>--</div>
+      </header>
+
+      <aside class="sidebar">
+        <h2 data-i18n="coverage_title">Coverage</h2>
+        <p data-i18n="coverage_desc_routes">Google Maps will refuse origins or destinations outside these states.</p>
+        <ul class="state-list" data-states></ul>
+      </aside>
+
+      <main class="workspace">
+        <!-- Long-Distance Freight Planning Banner -->
+        <div style="background: var(--blue-soft); border: 1px solid var(--blue-border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">📅</span>
+            <div>
+              <strong style="color: var(--blue-text); font-size: 13.5px; display: block;">Planning a Multi-Day Long-Distance Freight Trip?</strong>
+              <span style="font-size: 12px; color: var(--text-muted);">Automatically compute day-by-day stopping cities, highway rest breaks, and overnight staging across all Indian states.</span>
+            </div>
+          </div>
+          <a href="trip-planner.html" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 6px 14px;">
+            Open Multi-Day Route Scheduler →
+          </a>
+        </div>
+        <!-- Command Header -->
+        <div class="card card-pad" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: rgba(59, 130, 246, 0.1); color: var(--blue); padding: 3px 10px; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.25);" data-i18n="sih_edition_badge">
+                  ⚡ SIH 2024–2026 INNOVATION EDITION
+                </span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 6px;">
+                  <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green);"></span>
+                  <span data-i18n="telemetry_active_badge">LIVE NE8 DISASTER TELEMETRY ACTIVE</span>
+                </span>
+              </div>
+              <h1 style="font-size: 22px; color: var(--text); margin: 0 0 6px 0; font-weight: 700; letter-spacing: -0.01em;">
+                <span data-i18n="routes_main_title">🛣️ Intelligent Disaster Rerouting Desk</span>
+              </h1>
+              <p style="color: var(--muted); font-size: 13px; margin: 0; max-width: 760px; line-height: 1.5;" data-i18n="routes_main_desc">
+                Real-time mountain highway bypass engine: dynamically evaluates natural disaster reports, road blockages, and terrain elevations to compute automated non-intersecting detour corridors.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="locate-btn" data-i18n="btn_locate">📍 GPS Current Fix</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="ask-ai-btn" onclick="window.openAIChatbotWithQuery(document.getElementById('origin').value + ' to ' + document.getElementById('destination').value + ' route')" data-i18n="btn_disaster_ai_desk">💬 Disaster AI Desk</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Northeast Mountain Highway Corridors -->
+        <div class="ai-quick-chip-row" style="margin-bottom: 16px;">
+          <strong style="color: #f8fafc; font-size: 13px; letter-spacing: 0.02em;" data-i18n="quick_corridors_title">⚡ Quick Corridors:</strong>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Guwahati, Assam', 'Shillong, Meghalaya')">🏙️ Guwahati ➔ ⛰️ Shillong</button>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Shillong, Meghalaya', 'Silchar, Assam')">⛰️ Shillong ➔ 🏞️ Silchar</button>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Silchar, Assam', 'Imphal, Manipur')">🏞️ Silchar ➔ 🌄 Imphal</button>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Guwahati, Assam', 'Tawang, Arunachal Pradesh')">🏙️ Guwahati ➔ ❄️ Tawang</button>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Dimapur, Nagaland', 'Kohima, Nagaland')">🛤️ Dimapur ➔ ⛰️ Kohima</button>
+          <button type="button" class="ai-quick-chip-btn" onclick="window.selectCorridor('Guwahati, Assam', 'Nagaon, Assam')">🏙️ Guwahati ➔ 🛣️ Nagaon</button>
+        </div>
+
+        <!-- High-Visibility Driver Visual HUD -->
+        <div id="driver-hud-container"></div>
+
+        <div class="split">
+          <!-- Minimal High-Tech Driver Console (Asks ONLY Origin & Destination) -->
+          <aside class="card card-pad minimal-route-console" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Hidden inputs for backward compatibility -->
+            <input type="hidden" id="ai-orig-quick" value="Guwahati, Assam" />
+            <input type="hidden" id="ai-dest-quick" value="Shillong, Meghalaya" />
+            <input type="hidden" id="ai-incident-quick" value="Barapani, Meghalaya" />
+            <input type="hidden" id="incident-location" value="Barapani, Meghalaya" />
+            <select id="incident-type" style="display: none;">
+              <option value="Landslide" selected>🪨 Landslide / Mudslide</option>
+              <option value="Flood">🌊 Flooded Road / High Water</option>
+              <option value="Road Damage">🚧 Road Damaged / Cave-in</option>
+              <option value="Tree Fall">🌲 Fallen Trees / Rocks</option>
+              <option value="Traffic">🚗 Heavy Traffic / Stalled Trucks</option>
+              <option value="Snow">❄️ Snow / Ice on Pass</option>
+              <option value="Other">⚠️ Other Danger / Blockade</option>
+            </select>
+            <textarea id="incident-desc" style="display: none;"></textarea>
+            <button type="button" id="btn-pick-incident-map" style="display: none;"></button>
+
+            <!-- Console Header -->
+            <div class="console-header">
+              <div class="console-title-group">
+                <span class="console-badge" data-i18n="console_badge">NE8 ROUTING DESK</span>
+                <h3 class="console-title" data-i18n="console_title">Where do you want to go?</h3>
+              </div>
+              <span class="console-status-pill">
+                <span class="pulse-dot"></span> <span data-i18n="console_status">AI Radar Active</span>
+              </span>
+            </div>
+
+            <!-- Connected Route Inputs (Origin & Destination Only) -->
+            <div class="route-input-group">
+              <div class="route-connector-line"></div>
+              
+              <!-- Origin Field -->
+              <div class="route-input-row">
+                <div class="route-point-marker origin-marker" title="Starting Point">
+                  <span class="marker-dot green"></span>
+                </div>
+                <div class="route-input-wrap">
+                  <label for="origin" class="route-input-label" data-i18n="label_origin">FROM (ORIGIN)</label>
+                  <div class="input-with-action">
+                    <input 
+                      id="origin" 
+                      list="ne-cities" 
+                      value="Guwahati, Assam" 
+                      placeholder="Enter starting city..." 
+                      data-i18n-ph="ph_origin"
+                      autocomplete="off"
+                      oninput="if(document.getElementById('ai-orig-quick')) document.getElementById('ai-orig-quick').value=this.value;" 
+                    />
+                    <button type="button" class="btn-input-action" id="btn-gps-origin" onclick="useMyPosition()" title="Use Current GPS Location" data-i18n="btn_gps_short">
+                      📍 GPS
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Swap Button (Flips Origin & Destination) -->
+              <div class="route-swap-row">
+                <button type="button" class="btn-route-swap" id="btn-swap-route" onclick="window.swapRouteOriginDestination()" title="Swap Origin and Destination">
+                  ⇅
+                </button>
+              </div>
+
+              <!-- Destination Field -->
+              <div class="route-input-row">
+                <div class="route-point-marker dest-marker" title="Destination">
+                  <span class="marker-dot red"></span>
+                </div>
+                <div class="route-input-wrap">
+                  <label for="destination" class="route-input-label" data-i18n="label_destination">TO (DESTINATION)</label>
+                  <input 
+                    id="destination" 
+                    list="ne-cities" 
+                    value="Shillong, Meghalaya" 
+                    placeholder="Enter destination..." 
+                    data-i18n-ph="ph_destination"
+                    autocomplete="off"
+                    oninput="if(document.getElementById('ai-dest-quick')) document.getElementById('ai-dest-quick').value=this.value;" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Automated AI Safety Scan Indicator -->
+            <div class="ai-scanner-notice">
+              <span class="ai-scanner-icon">🛡️</span>
+              <div class="ai-scanner-text">
+                <strong data-i18n="hazard_scan_title">Automatic Corridor Hazard Detection</strong>
+                <p data-i18n="hazard_scan_desc">AI scans driver disaster photos &amp; road blockages along your corridor. Detours automatically if blocked.</p>
+              </div>
+            </div>
+
+            <!-- Find Safe Route Action CTA -->
+            <button class="btn btn-primary btn-plan-route" id="plot-btn" type="button" data-i18n="btn_find_safe_route">
+              🛣️ Find Safe Route
+            </button>
+
+            <datalist id="ne-cities">
+              <option value="Guwahati, Assam"></option>
+              <option value="Shillong, Meghalaya"></option>
+              <option value="Barapani, Meghalaya"></option>
+              <option value="Sonapur, Meghalaya"></option>
+              <option value="Silchar, Assam"></option>
+              <option value="Imphal, Manipur"></option>
+              <option value="Jiribam, Manipur"></option>
+              <option value="Dimapur, Nagaland"></option>
+              <option value="Kohima, Nagaland"></option>
+              <option value="Phesama, Nagaland"></option>
+              <option value="Itanagar, Arunachal Pradesh"></option>
+              <option value="Tawang, Arunachal Pradesh"></option>
+              <option value="Sela Pass, Arunachal Pradesh"></option>
+              <option value="Aizawl, Mizoram"></option>
+              <option value="Agartala, Tripura"></option>
+              <option value="Gangtok, Sikkim"></option>
+              <option value="Rangpo, Sikkim"></option>
+              <option value="Dibrugarh, Assam"></option>
+              <option value="Tezpur, Assam"></option>
+              <option value="Nagaon, Assam"></option>
+            </datalist>
+
+            <p id="map-status" class="map-status-line" data-i18n="map_status_waiting">
+              Waiting for route calculation
+            </p>
+
+            <!-- Big Simple Driver Status Card Results -->
+            <div id="ai-eval-box" class="ai-eval-report"></div>
+
+            <a class="btn btn-google hidden" id="google-nav-btn" href="#" target="_blank" rel="noopener" style="width: 100%; text-align: center;" data-i18n="btn_open_best_gmaps">
+              🗺️ Open Route in Google Maps
+            </a>
+
+            <div id="route-score" class="hidden"></div>
+
+            <div class="turn-steps-container">
+              <strong style="font-size: 13px; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.04em;" data-i18n="turn_steps_title">Turn-by-Turn Steps:</strong>
+              <ol class="steps" id="steps" style="margin-top: 6px; padding-left: 18px;"></ol>
+            </div>
+          </aside>
+
+          <!-- Map and Live Feeds Section -->
+          <section class="card map-box">
+            <div id="map-toolbar" class="map-toolbar-wrap">
+              <div class="map-layer-group">
+                <button class="map-layer-btn active" id="layer-standard" type="button" data-i18n="map_layer_standard">🗺️ Standard Road</button>
+                <button class="map-layer-btn" id="layer-satellite" type="button" data-i18n="map_layer_satellite">🛰️ Satellite</button>
+                <button class="map-layer-btn" id="layer-dark" type="button" data-i18n="map_layer_dark">🌙 Night Mode</button>
+                <button class="map-layer-btn" id="layer-heatmap" type="button" data-i18n="map_layer_heatmap">🚨 Hazard Density</button>
+              </div>
+              <small style="color: var(--muted); font-size: 12px; font-weight: 600;">💡 Real-time satellite &amp; terrain radar</small>
+            </div>
+
+            <div id="map"></div>
+
+            <div id="elevation-container" class="elevation-card hidden">
+              <div class="elevation-header">
+                <h4 data-i18n="elevation_profile_title">📈 Route Elevation &amp; Mountain Pass Terrain Graph</h4>
+                <span id="elevation-meta" style="font-size: 12px; font-weight: 700; color: #2563eb;">--</span>
+              </div>
+              <canvas id="elevation-canvas" class="elevation-canvas"></canvas>
+            </div>
+
+            <!-- Mountain Aerial Drone Cam (Clean preview below map) -->
+            <section class="drone-hero-card" aria-label="Snow Mountain Drone Feed">
+              <video class="drone-video" autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop">
+                <source src="https://videos.pexels.com/video-files/5482939/5482939-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+                <source src="https://videos.pexels.com/video-files/4125345/4125345-hd_1280_720_30fps.mp4" type="video/mp4" />
+              </video>
+              <div class="drone-overlay-badge">
+                <span class="live-dot" data-i18n="live_drone">● LIVE DRONE</span>
+                <div>
+                  <strong data-i18n="drone_feed_title">Mountain Pass Aerial Feed</strong>
+                  <small data-i18n="drone_feed_desc">Live monitoring high-altitude mountain passes &amp; snowpack conditions</small>
+                </div>
+              </div>
+            </section>
+          </section>
+        </div>
+
+        <section class="card card-pad danger-section" style="margin-top: 20px;">
+          <h2 style="margin-bottom: 4px; font-size: 18px;" data-i18n="danger_title">Frequent Danger Zones &amp; High-Traffic Highways</h2>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;" data-i18n="danger_desc">Real-time monitoring of critical landslide passes, high-elevation corridors, and heavy freight trunk routes.</p>
+          <div id="danger-grid" class="danger-grid"></div>
+        </section>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/imd-weather.js"></script>
+    <script src="js/region.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/maps-loader.js"></script>
+    <script src="js/services/gemini-service.js"></script>
+    <script src="js/risks.js"></script>
+    <script src="js/score.js"></script>
+    <script src="js/ai-route-engine.js"></script>
+    <script src="js/evaluate.js"></script>
+    <script src="js/services/data-store.js"></script>
+    <script src="js/services/auth-service.js"></script>
+    <script src="js/services/risk-engine.js"></script>
+    <script src="js/services/ai-explanation-service.js"></script>
+    <script src="js/services/location-service.js"></script>
+    <script src="js/services/report-service.js"></script>
+    <script src="js/services/trip-service.js"></script>
+    <script src="js/routes.js"></script>
+    <script src="js/chatbot.js"></script>
+  </body>
+</html>

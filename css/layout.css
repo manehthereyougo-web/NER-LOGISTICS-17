@@ -1,0 +1,286 @@
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  width: 100%;
+}
+
+/* Multi-column layout only when page contains a sidebar (e.g. routes.html, incidents.html) */
+.app:has(.sidebar),
+.app.has-sidebar {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: var(--header-h) 1fr;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  min-height: var(--header-h);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 220px;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--navy);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+  flex-shrink: 0;
+}
+
+.brand strong {
+  display: block;
+  font-size: 15px;
+  color: var(--navy-dark);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.brand span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.top-nav {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.top-nav a {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.top-nav a:hover {
+  background: var(--bg-inset);
+  color: var(--navy-dark);
+}
+
+.top-nav a.is-active {
+  background: var(--bg-inset);
+  color: var(--accent);
+  border: 1px solid var(--line);
+  font-weight: 700;
+}
+
+.top-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  background: var(--bg-inset);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.sidebar {
+  background: #ffffff;
+  color: var(--text);
+  padding: var(--space-5) var(--space-4);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+
+.sidebar p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: var(--space-4);
+  line-height: 1.4;
+}
+
+.state-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.state-list button,
+.state-list a {
+  width: 100%;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.state-list button:hover,
+.state-list a:hover,
+.state-list .is-on {
+  background: var(--bg-inset);
+  border-color: var(--line-strong);
+  color: var(--navy-dark);
+}
+
+.workspace {
+  padding: var(--space-5);
+  min-width: 0;
+  background: transparent;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.workspace-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.workspace-head h1 {
+  font-size: 26px;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+}
+
+.workspace-head p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+  max-width: 65ch;
+}
+
+/* ==============================================================================
+   RESPONSIVE LAYOUT BREAKPOINTS
+   ============================================================================== */
+@media (max-width: 1100px) {
+  .workspace {
+    padding: 20px 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app,
+  .app:has(.sidebar),
+  .app.has-sidebar {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: var(--space-3) var(--space-4);
+    gap: 10px;
+  }
+
+  .top-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .top-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .workspace {
+    padding: 18px 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    padding: 10px 12px;
+  }
+
+  .brand {
+    min-width: unset;
+    gap: 8px;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .brand strong {
+    font-size: 13.5px;
+  }
+
+  .brand span {
+    font-size: 10px;
+  }
+
+  .workspace {
+    padding: 14px 10px;
+  }
+
+  .workspace-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .workspace-head h1 {
+    font-size: 20px;
+  }
+}

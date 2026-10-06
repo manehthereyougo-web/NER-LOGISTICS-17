@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Disaster photos · NE8 Corridor</title>
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <!-- Platform Role Switcher Banner -->
+    <div class="role-switcher-banner">
+      <div class="role-switcher-left">
+        <span class="role-switcher-tag" data-i18n="nav_incidents">📸 Disaster Photo Desk</span>
+        <span style="color: var(--text-muted); font-size: 11px;">
+          Multi-Role Logistics Safety Architecture: Switch to role-specific experience below
+        </span>
+      </div>
+      <div class="role-switcher-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <a class="role-pill-btn" href="driver.html" data-i18n="nav_driver">Driver PWA</a>
+        <a class="role-pill-btn" href="logistics.html" data-i18n="nav_logistics">Logistics Fleet</a>
+        <a class="role-pill-btn" href="official.html" data-i18n="nav_official">Official Desk</a>
+        <a class="role-pill-btn" href="index.html" data-i18n="nav_overview">Overview</a>
+      </div>
+    </div>
+
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="index.html">
+          <div class="brand-mark">NE8</div>
+          <div>
+            <strong data-i18n="app_title">NE8 Corridor</strong>
+            <span data-i18n="app_subtitle">Eight Northeast states only</span>
+          </div>
+        </a>
+        <nav class="top-nav">
+          <a href="index.html" data-i18n="nav_dashboard">Dashboard</a>
+          <a href="trip-planner.html" data-i18n="nav_trip_planner">Trip Planner</a>
+          <a href="driver.html">Driver PWA</a>
+          <a href="logistics.html">Logistics Fleet</a>
+          <a href="official.html">Official Desk</a>
+          <a class="is-active" href="incidents.html" data-i18n="nav_incidents">Disaster photos</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="btn-sos-nav" aria-label="Emergency SOS">
+            <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+          </button>
+          <div class="top-meta" data-clock>--</div>
+        </div>
+      </header>
+
+      <aside class="sidebar">
+        <h2 data-i18n="coverage_title">Coverage</h2>
+        <p data-i18n="coverage_desc_incidents">Pin every photo to one of the eight Northeast states.</p>
+        <ul class="state-list" data-states></ul>
+      </aside>
+
+      <main class="workspace">
+        <div class="mountain-hero">
+          <svg class="mountain-svg-bg" viewBox="0 0 500 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 200L120 70L220 150L350 40L500 200H0Z" fill="url(#m-grad1)"/>
+            <path d="M80 200L200 90L300 160L420 80L500 200H80Z" fill="url(#m-grad2)"/>
+            <defs>
+              <linearGradient id="m-grad1" x1="250" y1="40" x2="250" y2="200" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#10b981" stop-opacity="0.35"/>
+                <stop offset="1" stop-color="#0b1712" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="m-grad2" x1="290" y1="80" x2="290" y2="200" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#34d399" stop-opacity="0.2"/>
+                <stop offset="1" stop-color="#0b1712" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="workspace-head" style="margin-bottom:0; position:relative; z-index:2;">
+            <div>
+              <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); color:var(--accent); border:1px solid rgba(16,185,129,0.3); border-radius:99px; padding:4px 12px; font-size:11px; font-weight:700; margin-bottom:8px; text-transform:uppercase;" data-i18n="hero_badge_incidents">
+                📸 Damaged Routes & Google Maps Redirection
+              </div>
+              <h1 data-i18n="hero_title_incidents">Disaster Photo Desk & Redirection</h1>
+              <p data-i18n="hero_desc_incidents">
+                Drivers and field officers upload photos of damaged mountain routes (landslides, floods, road collapses, accidents). Each report calculates risk score and generates a direct Google Maps Navigation Redirection link.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <section class="drone-hero-card" aria-label="Snow Mountain Drone Feed">
+          <video class="drone-video" autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop">
+            <source src="https://videos.pexels.com/video-files/5482939/5482939-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/4125345/4125345-hd_1280_720_30fps.mp4" type="video/mp4" />
+          </video>
+          <div class="drone-overlay-badge">
+            <span class="live-dot">● LIVE DRONE</span>
+            <div>
+              <strong data-i18n="drone_feed_title">Snow Mountain Pass Aerial Feed</strong>
+              <small data-i18n="drone_feed_desc">Live aerial camera monitoring high-altitude mountain passes &amp; snowpack conditions</small>
+            </div>
+          </div>
+        </section>
+
+        <div class="split">
+          <aside class="card card-pad">
+            <!-- Low-Literacy Driver Quick-Snap Mode -->
+            <div style="margin-bottom: 14px;">
+              <h2 style="margin: 0 0 4px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;" data-i18n="driver_quick_snap_title">
+                📸 1-Tap Road Hazard Reporter
+              </h2>
+              <p style="font-size: 12px; color: var(--muted); margin: 0;" data-i18n="driver_quick_snap_desc">
+                No typing required! Tap a picture of what you see and press Send.
+              </p>
+            </div>
+
+            <!-- Big Visual Camera Action Button -->
+            <label class="btn-driver-camera-snap" for="photo">
+              <span class="camera-snap-icon">📸</span>
+              <span class="camera-snap-label" data-i18n="driver_snap_photo_btn">Take Road Photo</span>
+              <span class="camera-snap-sub" data-i18n="driver_snap_photo_sub">Tap to snap roadside damage or mudslide</span>
+              <input id="photo" type="file" accept="image/*" style="display:none;" />
+            </label>
+            <div class="preview" id="preview"><img id="preview-img" alt="Selected field photo" /></div>
+
+            <!-- 5 Large Pictorial Hazard Selection Cards (1-Tap Selection) -->
+            <div class="driver-hazard-pick-grid" id="driver-hazard-grid">
+              <button type="button" class="driver-hazard-card is-selected" data-hazard="landslide" data-type="landslide" data-title="Landslide Blockage" data-desc="Heavy landslide and rocks blocking highway pass.">
+                <span class="hazard-card-emoji">🪨</span>
+                <span class="hazard-card-title" data-i18n="driver_hazard_landslide">🪨 Landslide</span>
+              </button>
+              <button type="button" class="driver-hazard-card" data-hazard="flood" data-type="flood" data-title="Flooded Highway" data-desc="Flash flood and deep standing water over highway lane.">
+                <span class="hazard-card-emoji">🌊</span>
+                <span class="hazard-card-title" data-i18n="driver_hazard_flood">🌊 Flood Water</span>
+              </button>
+              <button type="button" class="driver-hazard-card" data-hazard="road-damage" data-type="road-damage" data-title="Broken Road & Sinkhole" data-desc="Dangerous road fracture and sinking soil on ghat section.">
+                <span class="hazard-card-emoji">🚧</span>
+                <span class="hazard-card-title" data-i18n="driver_hazard_broken">🚧 Broken Road</span>
+              </button>
+              <button type="button" class="driver-hazard-card" data-hazard="closure" data-type="closure" data-title="Highway Impassable / Blocked" data-desc="Complete road closure and gridlock along mountain corridor.">
+                <span class="hazard-card-emoji">⛔</span>
+                <span class="hazard-card-title" data-i18n="driver_hazard_blocked">⛔ Road Blocked</span>
+              </button>
+              <button type="button" class="driver-hazard-card" data-hazard="heavy-rain" data-type="other" data-title="Snowpack & Black Ice Alert" data-desc="Sub-zero freezing pass with dangerous black ice and snow.">
+                <span class="hazard-card-emoji">❄️</span>
+                <span class="hazard-card-title" data-i18n="driver_hazard_snow">❄️ Snow / Ice</span>
+              </button>
+            </div>
+
+            <!-- Auto-GPS Status Beacon -->
+            <input type="hidden" id="latitude" />
+            <input type="hidden" id="longitude" />
+            <div class="driver-gps-locked-pill" id="driver-gps-pill">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; display: inline-block;"></span>
+              <span id="driver-gps-text" data-i18n="driver_gps_locked_msg">📍 Live GPS Location Auto-Locked</span>
+              <button type="button" id="btn-detect-gps" style="background:none; border:none; color:#38bdf8; cursor:pointer; margin-left:auto; font-size:12px; font-weight:700;" title="Refresh GPS">🔄</button>
+            </div>
+            <div id="gps-status-badge" style="display:none;"></div>
+
+            <!-- Big 1-Tap Submit Button for Drivers -->
+            <button type="button" class="btn-driver-submit-snap" id="btn-driver-submit-snap">
+              <span style="font-size: 22px;">🚀</span>
+              <span data-i18n="driver_send_alert_btn">Send Road Alert Now</span>
+            </button>
+
+            <!-- Collapsible Detailed Officer Controls (Optional) -->
+            <details style="margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px;">
+              <summary style="cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600;" data-i18n="official_form_toggle">
+                ⚙️ Show/Hide Detailed Officer Form
+              </summary>
+              <div class="field" style="margin-top: 12px">
+                <label for="title" data-i18n="label_site_name">Site name</label>
+                <input id="title" value="Landslide Blockage" placeholder="NH-6 km stone, pass, or bridge" data-i18n-ph="ph_site_name" />
+              </div>
+              <div class="field">
+                <label for="state" data-i18n="label_state">State</label>
+                <select id="state"></select>
+              </div>
+              <div class="field">
+                <label for="incident-type" data-i18n="label_incident_type">Incident Type</label>
+                <select id="incident-type">
+                  <option value="landslide" data-i18n="opt_landslide" selected>🪨 Landslide / Mudslip</option>
+                  <option value="flood" data-i18n="opt_flood">🌊 Flood / Inundation</option>
+                  <option value="road-damage" data-i18n="opt_road_damage">🚧 Road Damage / Sinkhole</option>
+                  <option value="bridge-damage" data-i18n="opt_bridge_damage">🌉 Bridge Damage</option>
+                  <option value="closure" data-i18n="opt_closure">⛔ Traffic Blockage / Closure</option>
+                  <option value="heavy-rain" data-i18n="opt_heavy_rain">🌧️ Heavy Rainfall</option>
+                  <option value="other" data-i18n="opt_other">⚠️ Other Road Hazard</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="place" data-i18n="label_place">Nearest place & district</label>
+                <input id="place" value="Sonapur Pass, East Jaintia Hills" placeholder="Barapani, East Jaintia Hills, Shillong" data-i18n-ph="ph_place" />
+              </div>
+              <div class="field">
+                <span class="field-label" data-i18n="label_risk_type">Risk type</span>
+                <div class="check-grid" id="hazard-checks">
+                  <label><input type="checkbox" name="hazard" value="landslide" checked /> <span data-i18n="hazard_landslide">Landslide</span></label>
+                  <label><input type="checkbox" name="hazard" value="flood" /> <span data-i18n="hazard_flood">Flood</span></label>
+                  <label><input type="checkbox" name="hazard" value="heavy-rain" /> <span data-i18n="hazard_rain">Heavy rainfall</span></label>
+                  <label><input type="checkbox" name="hazard" value="road-damage" /> <span data-i18n="hazard_damage">Road damage</span></label>
+                  <label><input type="checkbox" name="hazard" value="closure" /> <span data-i18n="hazard_closure">Road closure</span></label>
+                  <label><input type="checkbox" name="hazard" value="accident" /> <span data-i18n="hazard_accident">Accident</span></label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="description" data-i18n="label_description">What the driver or official saw</label>
+                <textarea
+                  id="description"
+                  placeholder="Example: eastbound lane blocked by landslide after night rain."
+                  data-i18n-ph="ph_description"
+                >Heavy landslide and rocks blocking highway pass.</textarea>
+              </div>
+              <div class="row-actions">
+                <button class="btn btn-primary" id="eval-btn" type="button" data-i18n="btn_eval_risk">Evaluate risk</button>
+                <button class="btn btn-secondary" id="save-btn" type="button" data-i18n="btn_save_corridor">Save to corridor file</button>
+              </div>
+            </details>
+
+            <div id="photo-verdict" class="notice hidden" style="margin-top: 16px"></div>
+          </aside>
+          <section class="card card-pad">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+              <h2 style="margin:0;" data-i18n="recent_photos_title">Recent field photos</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-reports" style="color:#f87171; border-color:rgba(239,68,68,0.4); display:none;" data-i18n="btn_clear_reports">🗑️ Clear All Reports</button>
+            </div>
+            <div class="feed" id="feed"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/imd-weather.js"></script>
+    <script src="js/region.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/maps-loader.js"></script>
+    <script src="js/risks.js"></script>
+    <script src="js/evaluate.js"></script>
+    <script src="js/ai-route-engine.js"></script>
+    <script src="js/services/data-store.js"></script>
+    <script src="js/services/auth-service.js"></script>
+    <script src="js/services/risk-engine.js"></script>
+    <script src="js/services/ai-explanation-service.js"></script>
+    <script src="js/services/location-service.js"></script>
+    <script src="js/services/report-service.js"></script>
+    <script src="js/services/trip-service.js"></script>
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+    <script src="js/incidents.js"></script>
+    <script src="js/chatbot.js"></script>
+  </body>
+</html>

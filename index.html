@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeRoute · Intelligent Mountain Road &amp; Weather Safety</title>
+    <meta name="description" content="SafeRoute helps drivers, logistics operators, and highway authorities make evidence-based route decisions from real-world road and weather conditions across Northeast India." />
+    
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <style>
+      .landing-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 28px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: var(--shadow-sm);
+      }
+      .brand-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+      }
+      .brand-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 15px;
+        color: #ffffff;
+      }
+      .brand-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--navy-dark);
+        letter-spacing: -0.3px;
+        line-height: 1.2;
+      }
+      .brand-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .nav-btn {
+        padding: 8px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.15s ease;
+      }
+      .nav-btn-ghost {
+        color: var(--text-muted);
+      }
+      .nav-btn-ghost:hover {
+        background: var(--bg-inset);
+        color: var(--navy-dark);
+      }
+      .nav-btn-primary {
+        background: var(--navy);
+        color: #ffffff;
+      }
+      .nav-btn-primary:hover {
+        background: var(--navy-dark);
+        color: #ffffff;
+      }
+
+      /* Top Emergency Broadcast Banner */
+      #public-emergency-banner {
+        display: none;
+        background: var(--red);
+        color: #ffffff;
+        padding: 12px 24px;
+        font-size: 13.5px;
+        border-bottom: 2px solid #b91c1c;
+      }
+      .emergency-banner-inner {
+        max-width: 1140px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      /* Hero Section */
+      .hero-wrap {
+        text-align: center;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 48px 20px 36px 20px;
+      }
+      .hero-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--blue-soft);
+        border: 1px solid var(--blue-border);
+        border-radius: var(--radius-full);
+        padding: 6px 16px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--blue-text);
+        margin-bottom: 20px;
+      }
+      .hero-status-pill span.dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .hero-title {
+        font-size: 38px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.25;
+        color: var(--navy-dark);
+        margin: 0 0 16px 0;
+      }
+      .hero-title span {
+        color: var(--accent);
+      }
+      .hero-subtitle {
+        font-size: 16.5px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        font-weight: 400;
+        margin: 0 0 28px 0;
+      }
+
+      /* Guidelines & Helplines Grid */
+      .safety-guide-box {
+        max-width: 1040px;
+        margin: 0 auto 56px auto;
+        padding: 0 20px;
+      }
+      .safety-guide-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 18px;
+      }
+      @media (max-width: 768px) {
+        .safety-guide-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* 5-Step Process */
+      .section-label {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+      .steps-container {
+        max-width: 1040px;
+        margin: 0 auto 56px auto;
+        padding: 0 20px;
+      }
+      .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 860px) {
+        .steps-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 520px) {
+        .steps-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-item {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: var(--shadow-sm);
+      }
+      .step-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .step-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--navy-dark);
+        line-height: 1.3;
+      }
+      .step-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      /* Roles Section */
+      .roles-container {
+        max-width: 1040px;
+        margin: 0 auto 64px auto;
+        padding: 0 20px;
+      }
+      .roles-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .roles-header h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--navy-dark);
+        letter-spacing: -0.5px;
+        margin: 0 0 8px 0;
+      }
+      .roles-header p {
+        font-size: 15px;
+        color: var(--text-muted);
+        margin: 0;
+      }
+      .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      @media (max-width: 860px) {
+        .roles-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .role-card {
+        background: #ffffff;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: var(--shadow);
+        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .role-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+        box-shadow: var(--shadow-md);
+      }
+      .role-top {
+        margin-bottom: 22px;
+      }
+      .role-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 16px;
+        background: var(--bg-inset);
+        border: 1px solid var(--line);
+      }
+      .role-card-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--navy-dark);
+        margin: 0 0 8px 0;
+      }
+      .role-card-subtitle {
+        font-size: 13.5px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin: 0 0 16px 0;
+      }
+      .role-feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .role-feature-list li {
+        font-size: 13px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .role-feature-list li::before {
+        content: "✓";
+        font-weight: 800;
+        color: var(--accent);
+      }
+      .role-btn {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 18px;
+        border-radius: var(--radius);
+        font-size: 14.5px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.15s ease;
+      }
+      .btn-driver {
+        background: var(--navy);
+        color: #ffffff;
+      }
+      .btn-driver:hover {
+        background: var(--navy-dark);
+        color: #ffffff;
+      }
+      .btn-logistics {
+        background: #0284c7;
+        color: #ffffff;
+      }
+      .btn-logistics:hover {
+        background: #0369a1;
+        color: #ffffff;
+      }
+      .btn-official {
+        background: #047857;
+        color: #ffffff;
+      }
+      .btn-official:hover {
+        background: #065f46;
+        color: #ffffff;
+      }
+
+      /* Footer */
+      .landing-footer {
+        margin-top: auto;
+        border-top: 1px solid var(--line);
+        background: #ffffff;
+        padding: 28px 20px;
+      }
+      .footer-inner {
+        max-width: 1040px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .footer-legal {
+        font-size: 12.5px;
+        color: var(--text-muted);
+      }
+      .footer-links {
+        display: flex;
+        gap: 16px;
+        font-size: 12.5px;
+      }
+      .footer-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+      .footer-links a:hover {
+        color: var(--navy-dark);
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Public Highway Emergency Notice Banner (Dynamic) -->
+    <div id="public-emergency-banner">
+      <div class="emergency-banner-inner">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 22px;">🚨</span>
+          <div>
+            <strong id="public-alert-headline" style="display: block; font-size: 14.5px;">HIGHWAY AUTHORITY EMERGENCY BROADCAST</strong>
+            <span id="public-alert-msg" style="font-size: 12.5px; opacity: 0.95;">Active mountain transit advisory in effect.</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" id="btn-public-listen-alert" class="btn btn-sm" style="background: #ffffff; color: var(--red); font-weight: 800; font-size: 12px; border: none; padding: 6px 14px; border-radius: 99px;">
+            🔊 Tap to Listen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="landing-nav">
+      <a class="brand-box" href="index.html">
+        <div class="brand-badge">SR</div>
+        <div>
+          <div class="brand-title" data-i18n="app_name">SafeRoute</div>
+          <div class="brand-sub" data-i18n="app_tagline">Real-World Road &amp; Weather Routing</div>
+        </div>
+      </a>
+      <nav class="nav-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 14px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-sos-nav" aria-label="Emergency SOS">
+          <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+        </button>
+        <a href="trip-planner.html" class="nav-btn nav-btn-ghost" data-i18n="nav_trip_planner">📅 Trip Planner</a>
+        <a href="login.html?role=driver" class="nav-btn nav-btn-ghost" data-i18n="nav_driver">Driver Portal</a>
+        <a href="login.html?role=official" class="nav-btn nav-btn-ghost" data-i18n="nav_official">Authority Desk</a>
+        <a href="login.html" class="nav-btn nav-btn-primary" data-i18n="nav_signin">Sign In / Demo</a>
+      </nav>
+    </header>
+
+    <!-- Main Hero Content -->
+    <main>
+      <section class="hero-wrap">
+        <div class="hero-status-pill">
+          <span class="dot"></span> <span data-i18n="landing_badge">Road &amp; IMD Weather Telemetry Active</span>
+        </div>
+        <h1 class="hero-title" data-i18n="landing_title">
+          Better route decisions from real-world road and weather conditions.
+        </h1>
+        <p class="hero-subtitle" data-i18n="landing_sub">
+          SafeRoute combines open maps, live India Meteorological Department forecasts, crowd-sourced driver field reports, and highway authority telemetry to guide mountain logistics safely across Northeast India.
+        </p>
+      </section>
+
+      <!-- How will you use SafeRoute? Operations Grid -->
+      <section class="roles-container">
+        <div class="roles-header">
+          <h2 data-i18n="how_will_you_use">How will you use SafeRoute?</h2>
+          <p data-i18n="how_will_you_use_sub">Select your operational workspace to get started</p>
+        </div>
+
+        <div class="roles-grid">
+          <!-- Role 1: Driver -->
+          <div class="role-card">
+            <div class="role-top">
+              <div class="role-icon">🧭</div>
+              <h3 class="role-card-title" data-i18n="role_driver">Driver</h3>
+              <p class="role-card-subtitle" data-i18n="role_driver_desc">Mobile-first field route navigation and hazard reporting for commercial &amp; private drivers.</p>
+              <ul class="role-feature-list">
+                <li data-i18n="role_driver_feat1">Self-directed origin &amp; destination routing</li>
+                <li data-i18n="role_driver_feat2">Clear 'Why this route?' reasoning checklist</li>
+                <li data-i18n="role_driver_feat3">Map navigation with floating hazard alerts</li>
+                <li data-i18n="role_driver_feat4">Fast 1-tap road condition reporting</li>
+                <li data-i18n="role_driver_feat5">Voice listen button for all alerts</li>
+                <li data-i18n="role_driver_feat6">Multi-day trip planning &amp; route scheduling across India</li>
+              </ul>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <a href="driver.html" class="role-btn btn-driver" data-i18n="btn_continue_driver">Continue as Driver →</a>
+              <a href="trip-planner.html" class="role-btn" style="background:#0284c7; color:#ffffff; font-size:13px;" data-i18n="btn_open_trip_planner">📅 Multi-Day Route Scheduler →</a>
+            </div>
+          </div>
+
+          <!-- Role 2: Logistics Company -->
+          <div class="role-card">
+            <div class="role-top">
+              <div class="role-icon">🚚</div>
+              <h3 class="role-card-title" data-i18n="role_logistics">Logistics Company</h3>
+              <p class="role-card-subtitle" data-i18n="role_logistics_desc">Real-time fleet command answering 'What is happening to my fleet right now?'</p>
+              <ul class="role-feature-list">
+                <li data-i18n="role_logistics_feat1">Active vehicle journey monitoring</li>
+                <li data-i18n="role_logistics_feat2">High-risk corridor &amp; delay alerts</li>
+                <li data-i18n="role_logistics_feat3">Driver safety status indicators</li>
+                <li data-i18n="role_logistics_feat4">Corridor weather &amp; pass passability filters</li>
+              </ul>
+            </div>
+            <a href="login.html?role=logistics" class="role-btn btn-logistics" data-i18n="btn_continue_logistics">Continue as Logistics →</a>
+          </div>
+
+          <!-- Role 3: Official / Authority -->
+          <div class="role-card">
+            <div class="role-top">
+              <div class="role-icon">🏛️</div>
+              <h3 class="role-card-title" data-i18n="role_official">Official / Authority</h3>
+              <p class="role-card-subtitle" data-i18n="role_official_desc">Regional situational awareness, incident verification, and IMD disaster watch.</p>
+              <ul class="role-feature-list">
+                <li>Highway Emergency Alert Broadcast System</li>
+                <li data-i18n="role_official_feat1">Public incident verification workflow</li>
+                <li data-i18n="role_official_feat2">IMD official telemetry &amp; radar integration</li>
+                <li data-i18n="role_official_feat3">Danger zone &amp; landslide pass monitoring</li>
+                <li data-i18n="role_official_feat4">Privacy shielded (no private cargo data)</li>
+              </ul>
+            </div>
+            <a href="login.html?role=official" class="role-btn btn-official" data-i18n="btn_continue_official">Continue as Authority →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Official IMD Regional Meteorological Telemetry Matrix -->
+      <section class="safety-guide-box">
+        <div class="card card-pad" style="background: #ffffff; border: 1.5px solid var(--line); border-radius: var(--radius-lg); margin-bottom: 40px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft); color: var(--green-text); border: 1px solid var(--green-border); border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                🏛️ Official Meteorological Network
+              </div>
+              <h2 style="margin: 6px 0 2px 0; font-size: 20px; font-weight: 800; color: var(--navy-dark);">
+                India Meteorological Department (IMD) Live Weather Observations
+              </h2>
+              <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+                Real-time regional capital observatory telemetry across all 8 Northeast states · Zero simulated numbers.
+              </p>
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+              Source: Regional Meteorological Centre (RMC) Guwahati / IMD
+            </span>
+          </div>
+
+          <div id="public-weather-grid">
+            <div style="text-align: center; padding: 28px; color: var(--text-muted); font-size: 13px;">
+              Connecting to IMD Regional Observatories...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5-Step Process Engine -->
+      <section class="steps-container">
+        <div class="section-label" data-i18n="step_label">How It Works · 5-Step Engine</div>
+        <div class="steps-grid">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-name" data-i18n="step1_title">Route Entered</div>
+            <p class="step-desc" data-i18n="step1_desc">Driver enters origin &amp; destination. No pre-assigned constraints.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-name" data-i18n="step2_title">Multi-Source Scan</div>
+            <p class="step-desc" data-i18n="step2_desc">Gathers live weather, IMD alerts, active field reports &amp; traffic.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-name" data-i18n="step3_title">Condition Evaluation</div>
+            <p class="step-desc" data-i18n="step3_desc">Scores road risk, visibility, flooding probability &amp; confidence.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-name" data-i18n="step4_title">Transparent Advice</div>
+            <p class="step-desc" data-i18n="step4_desc">Recommends route with 'Why this route?' checklist and caveats.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">5</div>
+            <div class="step-name" data-i18n="step5_title">Live Trip Support</div>
+            <p class="step-desc" data-i18n="step5_desc">Floating hazard alerts en-route and turn-by-turn navigation.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mountain Safety Directives & National Helplines -->
+      <section class="safety-guide-box">
+        <div class="safety-guide-grid">
+          <div class="card card-pad" style="background: #ffffff; border: 1px solid var(--line);">
+            <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 800; color: var(--navy-dark);">
+              ⛰️ Mountain Highway Safety Rules &amp; Protocols
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text);">
+              <div>• <strong>Downhill Descent:</strong> Use low gear compression; avoid riding brakes to prevent brake fade on steep inclines.</div>
+              <div>• <strong>Landslide Precautions:</strong> Watch for small falling pebbles or muddy runoff—these precede major debris slides.</div>
+              <div>• <strong>High Altitude Sela Pass (NH-13):</strong> Carry wheel snow chains; avoid mountain transit between 18:00 and 06:00 during sub-zero freeze.</div>
+              <div>• <strong>Single Lane CRAWL:</strong> In flooded or sinking sections of NH-37 Jiribam Gorge, maintain a minimum 50m vehicle gap.</div>
+            </div>
+          </div>
+
+          <div class="card card-pad" style="background: var(--bg-inset); border: 1px solid var(--line);">
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; font-weight: 800; color: var(--navy-dark);">
+              🚨 24x7 Emergency Helplines
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                <span>National Emergency</span>
+                <strong style="color: var(--red); font-size: 15px;">112</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                <span>Disaster Management (SDMA)</span>
+                <strong style="color: var(--amber-text); font-size: 15px;">1070</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                <span>NHAI Highway Helpline</span>
+                <strong style="color: var(--blue); font-size: 15px;">1033</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Ambulance / Medical</span>
+                <strong style="color: var(--green-text); font-size: 15px;">108</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div class="footer-inner">
+        <div class="footer-legal">
+          <strong>SafeRoute</strong> · <span data-i18n="rec_route_disclaimer">Recommended based on current available conditions. SafeRoute does not guarantee road conditions.</span>
+        </div>
+        <div class="footer-links">
+          <a href="driver.html" data-i18n="nav_driver">Driver Portal</a>
+          <a href="official.html" data-i18n="nav_official">Authority Desk</a>
+          <a href="incidents.html" data-i18n="nav_incidents">Incidents</a>
+          <a href="login.html" data-i18n="nav_signin">Sign In / Demo</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Core Client Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/services/voice-service.js"></script>
+    <script src="js/imd-weather.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        function initHomePage() {
+          renderPublicWeather();
+          checkActiveEmergencyAlerts();
+
+          window.addEventListener("saferoute:lang-changed", () => {
+            renderPublicWeather();
+          });
+
+          window.addEventListener("saferoute:emergency-alert", () => {
+            checkActiveEmergencyAlerts();
+          });
+        }
+
+        function renderPublicWeather() {
+          if (window.SafeRouteWeather && window.SafeRouteWeather.renderPublicWeatherSummary) {
+            window.SafeRouteWeather.renderPublicWeatherSummary("public-weather-grid");
+          }
+        }
+
+        async function checkActiveEmergencyAlerts() {
+          const banner = document.getElementById("public-emergency-banner");
+          const headlineEl = document.getElementById("public-alert-headline");
+          const msgEl = document.getElementById("public-alert-msg");
+          const listenBtn = document.getElementById("btn-public-listen-alert");
+
+          let activeAlert = null;
+
+          // Attempt backend query
+          try {
+            const res = await fetch("/api/alerts/active");
+            if (res.ok) {
+              const data = await res.json();
+              if (data) activeAlert = data.alert || (data.activeAlerts && data.activeAlerts[0]);
+            }
+          } catch {}
+
+          if (!activeAlert) {
+            try {
+              const raw = localStorage.getItem("saferoute_official_broadcasts");
+              if (raw) {
+                const list = JSON.parse(raw);
+                activeAlert = list.find((a) => a.status === "ACTIVE") || list.find((a) => a.isClearance || (a.status === "RESOLVED" && a.clearanceExpiresAt && new Date(a.clearanceExpiresAt).getTime() > Date.now()));
+              }
+            } catch {}
+          }
+
+          if (activeAlert) {
+            const isClear = activeAlert.isClearance || activeAlert.status === "RESOLVED" || (activeAlert.severity && (activeAlert.severity.toLowerCase() === "clearance" || activeAlert.severity.toLowerCase() === "safe"));
+            const headline = isClear
+              ? (activeAlert.clearanceHeadline || activeAlert.headline || "Highway Corridor Reopened & Safe")
+              : (activeAlert.headline || activeAlert.title || "Highway Emergency Alert");
+            const message = isClear
+              ? (activeAlert.clearanceMessage || activeAlert.message || "Disaster clearance operations complete. Road is inspected and safe for travel.")
+              : (activeAlert.message || "");
+
+            const iconSpan = banner.querySelector("span[style*='font-size: 22px']");
+            if (isClear) {
+              banner.style.background = "linear-gradient(90deg, #15803d, #16a34a)";
+              if (iconSpan) iconSpan.textContent = "✅";
+              headlineEl.textContent = headline.startsWith("✅") ? headline : `✅ ALL CLEAR: ${activeAlert.corridor ? activeAlert.corridor + ' — ' : ''}${headline}`;
+              msgEl.textContent = message;
+              if (listenBtn) {
+                listenBtn.style.color = "#15803d";
+              }
+            } else {
+              banner.style.background = "linear-gradient(90deg, #b91c1c, #dc2626)";
+              if (iconSpan) iconSpan.textContent = "🚨";
+              headlineEl.textContent = `🚨 ${activeAlert.corridor ? activeAlert.corridor + ': ' : ''}${headline}`;
+              msgEl.textContent = message;
+              if (listenBtn) {
+                listenBtn.style.color = "var(--red)";
+              }
+            }
+            banner.style.display = "block";
+
+            if (listenBtn && window.SafeRouteVoice) {
+              const textToSpeak = isClear
+                ? `Official Highway Clearance Announcement: ${headline}. ${message}`
+                : `Highway Authority Emergency Alert: ${headline}. ${message}`;
+              window.SafeRouteVoice.bindSpeakButton(
+                listenBtn,
+                () => textToSpeak,
+                () => (window.I18N ? window.I18N.getLanguage() : "en")
+              );
+            }
+          } else {
+            banner.style.display = "none";
+          }
+        }
+
+        window.addEventListener("saferoute:emergency-alert", () => {
+          checkHighwayAlerts();
+        });
+
+        document.addEventListener("DOMContentLoaded", initHomePage);
+      })();
+    </script>
+  </body>
+</html>

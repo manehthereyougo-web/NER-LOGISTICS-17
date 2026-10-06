@@ -1,0 +1,16 @@
+[
+  {
+    "alertId": "alert-ner-seed-101",
+    "title": "ADVISORY: NH-6 Sonapur Tunnel Single-Lane Active",
+    "corridor": "NH-6 (Meghalaya)",
+    "severity": "warning",
+    "instructions": "Moderate orographic rainfall causing localized mud slips near Sonapur portal. Maintain under 30 km/h speed limit. Watch for highway flaggers.",
+    "officerName": "Dr. H. Roy",
+    "officerId": "usr-off-301",
+    "issuedAt": "2026-10-05T06:12:05.553Z",
+    "expiresAt": "2026-10-06T07:12:05.554Z",
+    "status": "ACTIVE",
+    "targetAudience": "ALL_REGISTERED_DRIVERS",
+    "deliveryStatus": "BROADCASTED_TO_ALL_DRIVERS"
+  }
+]

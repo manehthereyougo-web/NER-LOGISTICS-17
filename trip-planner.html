@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Driver Trip Planning &amp; Route Scheduling · SafeRoute</title>
+    <meta
+      name="description"
+      content="Intelligent multi-day goods transport trip planning and route scheduling across India. Plan daily stopping points, travel times, rest breaks, and overnight staging."
+    />
+
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet & MapLibre Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="css/app.css" />
+
+    <style>
+      body {
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .planner-navbar {
+        background: #ffffff;
+        border-bottom: 1px solid var(--line);
+        padding: 12px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .planner-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+      }
+
+      .planner-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--navy);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 15px;
+      }
+
+      .planner-layout {
+        max-width: 1380px;
+        margin: 20px auto;
+        padding: 0 16px 40px 16px;
+        display: grid;
+        grid-template-columns: 460px 1fr;
+        gap: 24px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 1024px) {
+        .planner-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Card styling */
+      .planner-card {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .form-group {
+        margin-bottom: 14px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .planner-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 14px;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        color: var(--text);
+        background: #ffffff;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .planner-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      .btn-stepper {
+        width: 38px;
+        height: 42px;
+        border: 1px solid var(--line);
+        background: var(--bg-inset);
+        border-radius: var(--radius-sm);
+        font-weight: 800;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-stepper:hover {
+        background: #e2e8f0;
+      }
+
+      .preset-chip-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+
+      .preset-chip {
+        background: var(--bg-inset);
+        border: 1px solid var(--line);
+        color: var(--text);
+        border-radius: 16px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .preset-chip:hover,
+      .preset-chip.active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-hover);
+      }
+
+      .btn-plan-submit {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: var(--radius);
+        background: var(--navy);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+        transition: background-color 0.15s, transform 0.15s;
+      }
+
+      .btn-plan-submit:hover {
+        background: var(--navy-dark);
+        transform: translateY(-1px);
+      }
+
+      /* Quick Corridor Buttons */
+      .corridor-sample-btn {
+        background: var(--bg-inset);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 7px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.15s;
+      }
+
+      .corridor-sample-btn:hover {
+        background: #e2e8f0;
+        border-color: var(--accent);
+      }
+
+      /* Feasibility Banner */
+      .feasibility-box {
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .feasibility-unrealistic {
+        background: #fef2f2;
+        border: 1.5px solid #f87171;
+        color: #991b1b;
+      }
+
+      .feasibility-demanding {
+        background: #fffbeb;
+        border: 1.5px solid #fcd34d;
+        color: #92400e;
+      }
+
+      .feasibility-optimal {
+        background: #f0fdf4;
+        border: 1.5px solid #86efac;
+        color: #166534;
+      }
+
+      .feasibility-relaxed {
+        background: #eff6ff;
+        border: 1.5px solid #93c5fd;
+        color: #1e40af;
+      }
+
+      /* Trip Metrics Bar */
+      .trip-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 640px) {
+        .trip-metrics-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .metric-box-item {
+        text-align: center;
+        border-right: 1px solid var(--line);
+        padding: 0 8px;
+      }
+
+      .metric-box-item:last-child {
+        border-right: none;
+      }
+
+      .metric-box-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--navy-dark);
+        line-height: 1.2;
+      }
+
+      .metric-box-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      /* OpenStreetMap API Routing Status Bar */
+      .osm-api-bar {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-bottom: none;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 9px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 15;
+      }
+      .osm-pulse-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #16a34a;
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+        animation: osmPulse 2s infinite;
+        display: inline-block;
+      }
+      .osm-pulse-dot.connecting {
+        background: #0284c7;
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+        animation: osmPulse 1.2s infinite;
+      }
+      .osm-pulse-dot.fallback {
+        background: #f59e0b;
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+        animation: none;
+      }
+      @keyframes osmPulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+      }
+      .osm-badge-pill {
+        background: var(--bg-inset);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--navy-dark);
+      }
+
+      /* Map Container */
+      #trip-leaflet-map {
+        height: 380px;
+        min-height: 380px;
+        width: 100%;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        border: 1px solid var(--line);
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+        z-index: 10;
+        background: #e2e8f0;
+        position: relative;
+      }
+
+      /* Day Schedule Timeline */
+      .day-card {
+        background: #ffffff;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s, border-color 0.15s;
+        position: relative;
+      }
+
+      .day-card:hover {
+        border-color: var(--accent);
+      }
+
+      .day-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 12px;
+      }
+
+      .day-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--navy-dark);
+        color: #ffffff;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+
+      .day-route-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy-dark);
+        margin: 0 0 4px 0;
+      }
+
+      .day-stats-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-inset);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent-hover);
+      }
+
+      .amenity-block {
+        background: var(--bg-inset);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        margin-top: 10px;
+        font-size: 13px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .amenity-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .amenity-title {
+        font-weight: 700;
+        color: var(--navy-dark);
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .amenity-desc {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .day-card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .btn-day-gmaps {
+        background: #1a73e8;
+        color: #ffffff;
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 8px 14px;
+        font-size: 12.5px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-day-gmaps:hover {
+        background: #1557b0;
+      }
+
+      /* Print Manifest Sheet */
+      @media print {
+        .planner-navbar,
+        .planner-console-col,
+        #trip-leaflet-map,
+        .btn-day-gmaps,
+        .print-hide {
+          display: none !important;
+        }
+        .planner-layout {
+          display: block;
+          margin: 0;
+          padding: 0;
+        }
+        .day-card {
+          page-break-inside: avoid;
+          border: 1px solid #000;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <header class="planner-navbar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <a class="planner-brand" href="index.html">
+          <div class="planner-badge">SR</div>
+          <div>
+            <strong style="font-size: 16px; color: var(--navy-dark); display: block; line-height: 1.2;" data-i18n="app_name">SafeRoute</strong>
+            <small style="font-size: 11px; color: var(--text-muted);" data-i18n="trip_planner_title">Driver Trip Planning &amp; Route Scheduling</small>
+          </div>
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-sos-nav" aria-label="Emergency SOS">
+          <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+        </button>
+        <a class="role-pill-btn" href="driver.html" data-i18n="nav_driver">📱 Driver PWA</a>
+        <a class="role-pill-btn" href="logistics.html" data-i18n="nav_logistics">🚚 Logistics Fleet</a>
+        <a class="role-pill-btn" href="index.html" data-i18n="nav_overview">Overview</a>
+      </div>
+    </header>
+
+    <!-- Main Trip Planner Workspace -->
+    <main class="planner-layout">
+      <!-- Left Column: Input Form & Presets -->
+      <aside class="planner-console-col">
+        <div class="planner-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+              <span class="pill pill-safe" style="font-size: 10px; font-weight: 800;" data-i18n="freight_engine_badge">ALL-INDIA FREIGHT ENGINE</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: var(--navy-dark); margin: 4px 0 0 0;" data-i18n="plan_your_journey">
+                Plan Driver Journey
+              </h2>
+            </div>
+            <button type="button" class="btn-listen" id="btn-listen-planner" title="Listen to instructions">
+              <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+            </button>
+          </div>
+
+          <form id="trip-planner-form" onsubmit="event.preventDefault(); window.calculateDriverTripPlan();">
+            <!-- Starting Location -->
+            <div class="form-group">
+              <label class="form-label" for="planner-origin" data-i18n="label_origin">
+                1. Starting Location (Origin)
+              </label>
+              <div class="input-row">
+                <input
+                  type="text"
+                  id="planner-origin"
+                  class="planner-input"
+                  list="all-india-hubs"
+                  placeholder="e.g. Kerala, Kochi, Delhi, Kolkata..."
+                  data-i18n-ph="ph_origin"
+                  value="Kerala"
+                  required
+                />
+                <button
+                  type="button"
+                  id="btn-planner-gps"
+                  class="btn-stepper"
+                  style="width: 44px; font-size: 14px;"
+                  title="Use GPS Current Location"
+                  data-i18n-title="title_use_gps"
+                >
+                  📍
+                </button>
+              </div>
+            </div>
+
+            <!-- Swap Button -->
+            <div style="text-align: center; margin: -6px 0 8px 0;">
+              <button
+                type="button"
+                id="btn-planner-swap"
+                style="background: var(--bg-inset); border: 1px solid var(--line); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 14px;"
+                title="Swap Origin and Destination"
+                data-i18n-title="title_swap_cities"
+              >
+                ⇅
+              </button>
+            </div>
+
+            <!-- Final Destination -->
+            <div class="form-group">
+              <label class="form-label" for="planner-dest" data-i18n="label_dest">
+                2. Final Destination
+              </label>
+              <input
+                type="text"
+                id="planner-dest"
+                class="planner-input"
+                list="all-india-hubs"
+                placeholder="e.g. Assam, Guwahati, Mumbai, Chennai..."
+                data-i18n-ph="ph_dest"
+                value="Assam"
+                required
+              />
+            </div>
+
+            <!-- Number of Days Available -->
+            <div class="form-group">
+              <label class="form-label" for="planner-days" data-i18n="label_travel_days">
+                3. Number of Days Available
+              </label>
+              <div class="input-row">
+                <button type="button" class="btn-stepper" id="btn-days-minus">−</button>
+                <input
+                  type="number"
+                  id="planner-days"
+                  class="planner-input"
+                  min="1"
+                  max="30"
+                  value="5"
+                  style="text-align: center; font-size: 16px; font-weight: 800;"
+                  required
+                />
+                <button type="button" class="btn-stepper" id="btn-days-plus">+</button>
+              </div>
+              <!-- Quick Days Presets -->
+              <div class="preset-chip-row">
+                <span style="font-size: 11px; color: var(--muted); align-self: center;" data-i18n="quick_presets_label">Quick:</span>
+                <button type="button" class="preset-chip" data-days="2">2 <span data-i18n="days_suffix">Days</span></button>
+                <button type="button" class="preset-chip" data-days="3">3 <span data-i18n="days_suffix">Days</span></button>
+                <button type="button" class="preset-chip active" data-days="5">5 <span data-i18n="days_suffix">Days</span></button>
+                <button type="button" class="preset-chip" data-days="7">7 <span data-i18n="days_suffix">Days</span></button>
+                <button type="button" class="preset-chip" data-days="10">10 <span data-i18n="days_suffix">Days</span></button>
+              </div>
+            </div>
+
+            <!-- Vehicle / Freight Type -->
+            <div class="form-group">
+              <label class="form-label" for="planner-vehicle" data-i18n="label_vehicle_category">
+                Vehicle Category &amp; Freight Profile
+              </label>
+              <select id="planner-vehicle" class="planner-input" style="font-size: 13px;">
+                <option value="heavy_truck" selected data-i18n="vehicle_heavy_truck">Heavy Commercial Truck (10–18 Wheeler · 45-50 km/h)</option>
+                <option value="trailer" data-i18n="vehicle_trailer">Multi-Axle Container Trailer (Long Haul · 45 km/h)</option>
+                <option value="medium_truck" data-i18n="vehicle_medium_truck">Medium Goods Carrier (6 Wheeler / Eicher · 55 km/h)</option>
+                <option value="lcv" data-i18n="vehicle_lcv">Light Commercial Vehicle / Pickup (60 km/h)</option>
+              </select>
+            </div>
+
+            <!-- Submit CTA -->
+            <button type="submit" id="btn-submit-plan" class="btn-plan-submit">
+              <span>📅</span>
+              <span data-i18n="btn_generate_schedule">Calculate Day-by-Day Travel Plan</span>
+            </button>
+          </form>
+
+          <!-- Quick Freight Corridors (Popular Samples) -->
+          <div style="margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 14px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 8px;" data-i18n="sample_freight_corridors">
+              ⚡ Sample National Freight Corridors:
+            </span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <button
+                type="button"
+                class="corridor-sample-btn"
+                onclick="window.loadSampleCorridor('Kerala', 'Assam', 5)"
+              >
+                <span>🌴 Kerala ➔ ⛰️ Assam</span>
+                <span class="pill pill-safe" style="font-size: 10px;" id="sample-corridor-1">5 <span data-i18n="days_suffix">Days</span> (3,749 km)</span>
+              </button>
+              <button
+                type="button"
+                class="corridor-sample-btn"
+                onclick="window.loadSampleCorridor('Delhi', 'Mumbai', 3)"
+              >
+                <span>🏛️ Delhi ➔ 🌊 Mumbai</span>
+                <span class="pill pill-safe" style="font-size: 10px;" id="sample-corridor-2">3 <span data-i18n="days_suffix">Days</span> (1,616 km)</span>
+              </button>
+              <button
+                type="button"
+                class="corridor-sample-btn"
+                onclick="window.loadSampleCorridor('Kolkata', 'Chennai', 4)"
+              >
+                <span>🚢 Kolkata ➔ 🏭 Chennai</span>
+                <span class="pill pill-safe" style="font-size: 10px;" id="sample-corridor-3">4 <span data-i18n="days_suffix">Days</span> (1,670 km)</span>
+              </button>
+              <button
+                type="button"
+                class="corridor-sample-btn"
+                onclick="window.loadSampleCorridor('Guwahati', 'Tawang', 2)"
+              >
+                <span>⛰️ Guwahati ➔ ❄️ Tawang</span>
+                <span class="pill pill-safe" style="font-size: 10px;" id="sample-corridor-4">2 <span data-i18n="days_suffix">Days</span> (450 km <span data-i18n="ghat_tag">Ghat</span>)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Column: Interactive Map, Feasibility Banner, and Day-by-Day Cards -->
+      <section class="planner-results-col">
+        <!-- Feasibility Warning Banner (Dynamic) -->
+        <div id="feasibility-banner" class="feasibility-box feasibility-optimal" style="display: none;">
+          <span style="font-size: 24px;" id="feasibility-icon">✅</span>
+          <div style="flex: 1;">
+            <strong id="feasibility-title" style="display: block; font-size: 14px; margin-bottom: 3px;">
+              Optimal Freight Transit Schedule
+            </strong>
+            <p id="feasibility-desc" style="margin: 0; font-size: 12.5px; line-height: 1.45;"></p>
+            <div id="feasibility-action-box" style="margin-top: 10px; display: none;">
+              <button
+                type="button"
+                id="btn-apply-recommended-days"
+                style="background: #dc2626; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;"
+              >
+                ⚡ <span data-i18n="btn_apply_realistic">Apply Realistic Schedule</span> (<span id="rec-days-num">7</span> <span data-i18n="days_suffix">Days</span>)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overall Trip Metrics Banner -->
+        <div class="trip-metrics-grid" id="trip-metrics-container" style="display: none;">
+          <div class="metric-box-item">
+            <div class="metric-box-value" id="metric-total-dist">--</div>
+            <div class="metric-box-label" data-i18n="metric_total_dist">Total Distance</div>
+          </div>
+          <div class="metric-box-item">
+            <div class="metric-box-value" id="metric-total-days">--</div>
+            <div class="metric-box-label" data-i18n="metric_travel_days">Travel Days</div>
+          </div>
+          <div class="metric-box-item">
+            <div class="metric-box-value" id="metric-avg-daily">--</div>
+            <div class="metric-box-label" data-i18n="metric_avg_daily">Avg / Day</div>
+          </div>
+          <div class="metric-box-item">
+            <div class="metric-box-value" id="metric-est-time">--</div>
+            <div class="metric-box-label" data-i18n="metric_driving_time">Total Transit Time</div>
+          </div>
+        </div>
+
+        <!-- Action Bar: Print & Full Google Maps -->
+        <div
+          id="planner-actions-bar"
+          style="display: none; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;"
+        >
+          <div style="display: flex; gap: 8px;">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              onclick="window.print()"
+              title="Print trip schedule manifest"
+            >
+              🖨️ <span data-i18n="btn_print_manifest">Print Trip Manifest</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              id="btn-listen-full-schedule"
+              title="Listen to full day-by-day itinerary"
+            >
+              🔊 <span data-i18n="btn_listen_plan">Listen to Plan</span>
+            </button>
+          </div>
+
+          <a
+            id="btn-full-gmaps"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            class="btn-day-gmaps"
+            style="padding: 6px 12px; font-size: 12px;"
+          >
+            🧭 <span data-i18n="btn_open_full_gmaps">Open Full Journey in Google Maps</span>
+          </a>
+        </div>
+
+        <!-- OpenStreetMap API Routing Live Status Bar -->
+        <div class="osm-api-bar" id="osm-api-bar">
+          <div style="display: flex; align-items: center; gap: 9px;">
+            <span class="osm-pulse-dot" id="osm-status-dot"></span>
+            <div>
+              <strong id="osm-status-title" style="font-size: 12.5px; color: var(--navy-dark); display: block;" data-i18n="osm_routing_engine">
+                OpenStreetMap Highway Routing API: Active
+              </strong>
+              <small id="osm-status-subtitle" style="font-size: 11px; color: var(--text-muted);" data-i18n="osm_route_stats">
+                OSRM Engine · OpenStreetMap GeoJSON Road Network
+              </small>
+            </div>
+          </div>
+          <div id="osm-waypoint-badge" class="osm-badge-pill" style="display: none;">
+            <span id="osm-waypoint-text">0 Waypoints</span>
+          </div>
+        </div>
+
+        <!-- Interactive Leaflet Map -->
+        <div id="trip-leaflet-map"></div>
+
+        <!-- Day-by-Day Schedule List Container -->
+        <div id="daily-schedule-list">
+          <div style="text-align: center; padding: 40px 20px; background: #ffffff; border-radius: var(--radius-lg); border: 1px dashed var(--line); color: var(--text-muted);">
+            <span style="font-size: 32px; display: block; margin-bottom: 10px;">🧭</span>
+            <strong style="font-size: 16px; color: var(--navy-dark); display: block;" data-i18n="waiting_for_inputs">
+              Enter your starting point, destination, and days to calculate your route schedule.
+            </strong>
+            <p style="font-size: 13px; margin: 6px 0 0 0;" data-i18n="waiting_for_inputs_desc">
+              SafeRoute automatically calculates intermediate stopping cities, daily distances, travel times, and certified highway rest plazas.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Datalist containing 100+ Indian States, Capitals, and Major Freight Hubs -->
+    <datalist id="all-india-hubs">
+      <!-- States -->
+      <option value="Kerala"></option>
+      <option value="Assam"></option>
+      <option value="Tamil Nadu"></option>
+      <option value="Karnataka"></option>
+      <option value="Andhra Pradesh"></option>
+      <option value="Telangana"></option>
+      <option value="Maharashtra"></option>
+      <option value="Gujarat"></option>
+      <option value="Rajasthan"></option>
+      <option value="West Bengal"></option>
+      <option value="Odisha"></option>
+      <option value="Delhi"></option>
+      <option value="Uttar Pradesh"></option>
+      <option value="Bihar"></option>
+      <option value="Madhya Pradesh"></option>
+      <option value="Punjab"></option>
+      <option value="Haryana"></option>
+      <option value="Chhattisgarh"></option>
+      <option value="Jharkhand"></option>
+      <option value="Meghalaya"></option>
+      <option value="Arunachal Pradesh"></option>
+      <option value="Nagaland"></option>
+      <option value="Manipur"></option>
+      <option value="Mizoram"></option>
+      <option value="Tripura"></option>
+      <option value="Sikkim"></option>
+      <option value="Jammu and Kashmir"></option>
+      <option value="Goa"></option>
+      <option value="Himachal Pradesh"></option>
+      <option value="Uttarakhand"></option>
+
+      <!-- Key Freight Cities -->
+      <option value="Kochi, Kerala"></option>
+      <option value="Palakkad, Kerala"></option>
+      <option value="Kozhikode, Kerala"></option>
+      <option value="Thiruvananthapuram, Kerala"></option>
+      <option value="Guwahati, Assam"></option>
+      <option value="Nagaon, Assam"></option>
+      <option value="Jorhat, Assam"></option>
+      <option value="Dibrugarh, Assam"></option>
+      <option value="Silchar, Assam"></option>
+      <option value="Tezpur, Assam"></option>
+      <option value="Bongaigaon, Assam"></option>
+      <option value="Chennai, Tamil Nadu"></option>
+      <option value="Salem, Tamil Nadu"></option>
+      <option value="Coimbatore, Tamil Nadu"></option>
+      <option value="Hosur, Tamil Nadu"></option>
+      <option value="Madurai, Tamil Nadu"></option>
+      <option value="Bengaluru, Karnataka"></option>
+      <option value="Hubballi, Karnataka"></option>
+      <option value="Belagavi, Karnataka"></option>
+      <option value="Mangaluru, Karnataka"></option>
+      <option value="Vijayawada, Andhra Pradesh"></option>
+      <option value="Visakhapatnam, Andhra Pradesh"></option>
+      <option value="Nellore, Andhra Pradesh"></option>
+      <option value="Tirupati, Andhra Pradesh"></option>
+      <option value="Kurnool, Andhra Pradesh"></option>
+      <option value="Hyderabad, Telangana"></option>
+      <option value="Warangal, Telangana"></option>
+      <option value="Bhubaneswar, Odisha"></option>
+      <option value="Cuttack, Odisha"></option>
+      <option value="Balasore, Odisha"></option>
+      <option value="Berhampur, Odisha"></option>
+      <option value="Kolkata, West Bengal"></option>
+      <option value="Kharagpur, West Bengal"></option>
+      <option value="Siliguri, West Bengal"></option>
+      <option value="Malda, West Bengal"></option>
+      <option value="Dankuni, West Bengal"></option>
+      <option value="Durgapur, West Bengal"></option>
+      <option value="Mumbai, Maharashtra"></option>
+      <option value="Pune, Maharashtra"></option>
+      <option value="Nagpur, Maharashtra"></option>
+      <option value="Nashik, Maharashtra"></option>
+      <option value="Kolhapur, Maharashtra"></option>
+      <option value="Ahmedabad, Gujarat"></option>
+      <option value="Surat, Gujarat"></option>
+      <option value="Vadodara, Gujarat"></option>
+      <option value="Rajkot, Gujarat"></option>
+      <option value="Gandhidham, Gujarat"></option>
+      <option value="Delhi, Delhi"></option>
+      <option value="Gurugram, Haryana"></option>
+      <option value="Panipat, Haryana"></option>
+      <option value="Ambala, Haryana"></option>
+      <option value="Chandigarh, Punjab"></option>
+      <option value="Ludhiana, Punjab"></option>
+      <option value="Jalandhar, Punjab"></option>
+      <option value="Jaipur, Rajasthan"></option>
+      <option value="Udaipur, Rajasthan"></option>
+      <option value="Kota, Rajasthan"></option>
+      <option value="Ajmer, Rajasthan"></option>
+      <option value="Lucknow, Uttar Pradesh"></option>
+      <option value="Kanpur, Uttar Pradesh"></option>
+      <option value="Varanasi, Uttar Pradesh"></option>
+      <option value="Agra, Uttar Pradesh"></option>
+      <option value="Patna, Bihar"></option>
+      <option value="Muzaffarpur, Bihar"></option>
+      <option value="Purnia, Bihar"></option>
+      <option value="Bhopal, Madhya Pradesh"></option>
+      <option value="Indore, Madhya Pradesh"></option>
+      <option value="Jabalpur, Madhya Pradesh"></option>
+      <option value="Gwalior, Madhya Pradesh"></option>
+      <option value="Raipur, Chhattisgarh"></option>
+      <option value="Ranchi, Jharkhand"></option>
+      <option value="Jamshedpur, Jharkhand"></option>
+      <option value="Shillong, Meghalaya"></option>
+      <option value="Itanagar, Arunachal Pradesh"></option>
+      <option value="Tawang, Arunachal Pradesh"></option>
+      <option value="Dimapur, Nagaland"></option>
+      <option value="Kohima, Nagaland"></option>
+      <option value="Imphal, Manipur"></option>
+      <option value="Aizawl, Mizoram"></option>
+      <option value="Agartala, Tripura"></option>
+      <option value="Gangtok, Sikkim"></option>
+      <option value="Jammu, Jammu & Kashmir"></option>
+      <option value="Srinagar, Jammu & Kashmir"></option>
+    </datalist>
+
+    <!-- Leaflet & MapLibre GL Leaflet Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      if (typeof L === "undefined") {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"><\/script>');
+      }
+    </script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+
+    <!-- Core SafeRoute Services -->
+    <script src="js/config.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/services/voice-service.js"></script>
+    <script src="js/services/trip-planner-engine.js"></script>
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+
+    <!-- Controller Script -->
+    <script>
+      const MAP_CONFIG = {
+        provider: 'maptiler',
+        apiKey: 'PASTE_YOUR_KEY_HERE'
+      };
+
+      (function () {
+        "use strict";
+
+        let currentTripPlan = null;
+        let mapInstance = null;
+        let mapLayerGroup = null;
+
+        // Initialize Map
+        function initLeafletMap() {
+          const mapEl = document.getElementById("trip-leaflet-map");
+          if (!mapEl || mapInstance) return;
+
+          if (typeof L === "undefined") {
+            console.warn("Leaflet library not ready yet, retrying in 250ms...");
+            setTimeout(initLeafletMap, 250);
+            return;
+          }
+
+          try {
+            // Default view centered on India
+            mapInstance = L.map("trip-leaflet-map", {
+              zoomControl: true,
+              scrollWheelZoom: false,
+            }).setView([21.7679, 78.8718], 5);
+
+            // Configure Map Tile Layer
+            const hasValidKey =
+              typeof MAP_CONFIG !== "undefined" &&
+              MAP_CONFIG.apiKey &&
+              MAP_CONFIG.apiKey.trim() !== "" &&
+              MAP_CONFIG.apiKey !== "PASTE_YOUR_KEY_HERE";
+
+            if (hasValidKey) {
+              L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=' + MAP_CONFIG.apiKey, {
+                maxZoom: 20,
+                tileSize: 512,
+                zoomOffset: -1,
+                attribution: '&copy; MapTiler &copy; OpenStreetMap contributors'
+              }).addTo(mapInstance);
+            } else {
+              if (window.SafeRouteMap && window.SafeRouteMap.createTileLayer) {
+                window.SafeRouteMap.createTileLayer().addTo(mapInstance);
+                window.SafeRouteMap.attachTileErrorBanner(mapInstance, "trip-leaflet-map");
+              } else {
+                L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+                  maxZoom: 19,
+                  attribution: '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+                  crossOrigin: true,
+                }).addTo(mapInstance);
+              }
+            }
+
+            mapLayerGroup = L.layerGroup().addTo(mapInstance);
+
+            // Responsive map resizing
+            window.addEventListener("resize", () => {
+              if (mapInstance) mapInstance.invalidateSize();
+            });
+            if (window.screen && window.screen.orientation) {
+              window.screen.orientation.addEventListener("change", () => {
+                if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 250);
+              });
+            }
+
+            setTimeout(() => {
+              if (mapInstance) mapInstance.invalidateSize();
+            }, 200);
+          } catch (e) {
+            console.error("Leaflet map initialization error:", e);
+          }
+        }
+
+        // Stepper buttons for days
+        document.getElementById("btn-days-minus").addEventListener("click", () => {
+          const input = document.getElementById("planner-days");
+          const val = Math.max(1, (parseInt(input.value, 10) || 1) - 1);
+          input.value = val;
+          highlightPreset(val);
+        });
+
+        document.getElementById("btn-days-plus").addEventListener("click", () => {
+          const input = document.getElementById("planner-days");
+          const val = Math.min(30, (parseInt(input.value, 10) || 1) + 1);
+          input.value = val;
+          highlightPreset(val);
+        });
+
+        // Quick days preset chips
+        document.querySelectorAll(".preset-chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const d = parseInt(chip.dataset.days, 10);
+            document.getElementById("planner-days").value = d;
+            highlightPreset(d);
+            window.calculateDriverTripPlan();
+          });
+        });
+
+        function highlightPreset(days) {
+          document.querySelectorAll(".preset-chip").forEach((c) => {
+            if (parseInt(c.dataset.days, 10) === days) {
+              c.classList.add("active");
+            } else {
+              c.classList.remove("active");
+            }
+          });
+        }
+
+        // Swap button
+        document.getElementById("btn-planner-swap").addEventListener("click", () => {
+          const orig = document.getElementById("planner-origin");
+          const dest = document.getElementById("planner-dest");
+          const tmp = orig.value;
+          orig.value = dest.value;
+          dest.value = tmp;
+          window.calculateDriverTripPlan();
+        });
+
+        // GPS button
+        document.getElementById("btn-planner-gps").addEventListener("click", () => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                document.getElementById("planner-origin").value = `Current Location (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`;
+                window.calculateDriverTripPlan();
+              },
+              () => {
+                alert("Could not access GPS location. Please type your city.");
+              }
+            );
+          }
+        });
+
+        // Audio voice buttons
+        document.getElementById("btn-listen-planner").addEventListener("click", () => {
+          if (window.NE8_VOICE) {
+            const currentLang = window.I18N ? window.I18N.getLanguage() : "en";
+            const text = tr("sub_trip_planner", "SafeRoute Multi-Day Trip Planning. Enter your starting location, final destination, and number of days to receive an intelligent day-by-day itinerary with highway stopping points and rest breaks.");
+            window.NE8_VOICE.speak(text, { lang: currentLang });
+          }
+        });
+
+        document.getElementById("btn-listen-full-schedule").addEventListener("click", () => {
+          if (!currentTripPlan || !window.NE8_VOICE) return;
+          const currentLang = window.I18N ? window.I18N.getLanguage() : "en";
+          const daySuffix = tr("days_suffix", "Days");
+          const text = `${currentTripPlan.origin.name} ➔ ${currentTripPlan.destination.name}. ${currentTripPlan.totalDistanceKm} km, ${currentTripPlan.requestedDays} ${daySuffix}. ` +
+            currentTripPlan.schedule.map((d) => `${d.dayLabel}: ${d.startingPoint} ➔ ${d.destinationPoint}, ${d.distanceKm} km, ${d.drivingTimeStr}.`).join(" ");
+          window.NE8_VOICE.speak(text, { lang: currentLang });
+        });
+
+        // Apply recommended days button in warning banner
+        document.getElementById("btn-apply-recommended-days").addEventListener("click", () => {
+          if (currentTripPlan && currentTripPlan.realisticSuggestedDays) {
+            document.getElementById("planner-days").value = currentTripPlan.realisticSuggestedDays;
+            highlightPreset(currentTripPlan.realisticSuggestedDays);
+            window.calculateDriverTripPlan();
+          }
+        });
+
+        // Load sample corridor helper
+        window.loadSampleCorridor = function (orig, dest, days) {
+          document.getElementById("planner-origin").value = orig;
+          document.getElementById("planner-dest").value = dest;
+          document.getElementById("planner-days").value = days;
+          highlightPreset(days);
+          window.calculateDriverTripPlan();
+        };
+
+        const LEG_COLORS = [
+          "#2563eb", // Day 1: Royal Blue
+          "#059669", // Day 2: Emerald Green
+          "#d97706", // Day 3: Amber
+          "#7c3aed", // Day 4: Purple
+          "#e11d48", // Day 5: Rose
+          "#0d9488", // Day 6: Teal
+          "#4f46e5", // Day 7: Indigo
+          "#ca8a04", // Day 8: Gold
+          "#0891b2", // Day 9: Cyan
+          "#be123c", // Day 10+: Crimson
+        ];
+
+        let dayLegPolylines = {};
+
+        function setOsmStatusBarState(state, plan) {
+          const dot = document.getElementById("osm-status-dot");
+          const title = document.getElementById("osm-status-title");
+          const subtitle = document.getElementById("osm-status-subtitle");
+          const badge = document.getElementById("osm-waypoint-badge");
+          const badgeText = document.getElementById("osm-waypoint-text");
+
+          if (!dot || !title || !subtitle) return;
+
+          if (state === "connecting") {
+            dot.className = "osm-pulse-dot connecting";
+            title.textContent = tr("osm_status_connecting", "Fetching live OpenStreetMap highway geometry...");
+            subtitle.textContent = tr("osm_route_stats", "OSRM Engine · OpenStreetMap GeoJSON Road Network");
+            if (badge) badge.style.display = "none";
+          } else if (state === "connected") {
+            dot.className = "osm-pulse-dot";
+            const waypointsCount = (plan && plan.osmCoordinatesCount) ? plan.osmCoordinatesCount.toLocaleString() : "40,000+";
+            const legsCount = (plan && plan.requestedDays) ? plan.requestedDays : 1;
+            const tpl = tr("osm_status_connected", "Connected · Live Highway Geometry ({0} waypoints across {1} legs)");
+            title.textContent = tpl.replace("{0}", waypointsCount).replace("{1}", legsCount);
+            subtitle.textContent = (plan && plan.osmProvider) || tr("osm_route_stats", "OSRM Engine · OpenStreetMap GeoJSON Road Network");
+            if (badge && badgeText) {
+              badge.style.display = "inline-flex";
+              badgeText.textContent = `🛣️ ${waypointsCount} pts`;
+            }
+          } else {
+            // fallback / offline
+            dot.className = "osm-pulse-dot fallback";
+            title.textContent = tr("osm_status_offline", "Offline Corridor Fallback Active");
+            subtitle.textContent = (plan && plan.osmProvider) || "OpenStreetMap Offline Corridor Mode";
+            if (badge && badgeText) {
+              badge.style.display = "inline-flex";
+              badgeText.textContent = "Corridor Arcs";
+            }
+          }
+        }
+
+        // Main calculation function
+        window.calculateDriverTripPlan = async function () {
+          const originVal = document.getElementById("planner-origin").value.trim();
+          const destVal = document.getElementById("planner-dest").value.trim();
+          const daysVal = parseInt(document.getElementById("planner-days").value, 10) || 1;
+
+          if (!originVal || !destVal) {
+            alert("Please enter both starting location and final destination.");
+            return;
+          }
+
+          if (!window.NE8_TRIP_PLANNER) {
+            alert("Trip Planner Engine not loaded yet.");
+            return;
+          }
+
+          // 1. Indicate connecting to OpenStreetMap API
+          setOsmStatusBarState("connecting");
+
+          // 2. Immediate synchronous plan generation so UI doesn't hang
+          const plan = window.NE8_TRIP_PLANNER.planMultiDayTrip(originVal, destVal, daysVal);
+          currentTripPlan = plan;
+          renderPlanResults(plan);
+
+          // 3. Query OpenStreetMap OSRM Routing API for live highway road geometry
+          try {
+            const enrichedPlan = await window.NE8_TRIP_PLANNER.fetchOsmRouteGeometry(plan);
+            currentTripPlan = enrichedPlan;
+            const isLive = enrichedPlan.osmStatus === "LIVE_CONNECTED";
+            setOsmStatusBarState(isLive ? "connected" : "fallback", enrichedPlan);
+            
+            // Re-render map and cards with true road curves and real highway summaries
+            renderMapVisuals(enrichedPlan);
+            updateMetricsWithOsm(enrichedPlan);
+            updateDayCardsWithOsm(enrichedPlan);
+          } catch (err) {
+            console.warn("OpenStreetMap routing API query error:", err);
+            setOsmStatusBarState("fallback", plan);
+          }
+        };
+
+        function updateMetricsWithOsm(plan) {
+          if (!plan) return;
+          if (plan.osmTotalDistanceKm) {
+            const totalDistEl = document.getElementById("metric-total-dist");
+            if (totalDistEl) totalDistEl.textContent = `${plan.osmTotalDistanceKm.toLocaleString()} km`;
+            const avgDailyEl = document.getElementById("metric-avg-daily");
+            if (avgDailyEl) avgDailyEl.textContent = `${Math.round(plan.osmTotalDistanceKm / plan.requestedDays)} km`;
+          }
+        }
+
+        function updateDayCardsWithOsm(plan) {
+          if (!plan || !plan.schedule) return;
+          plan.schedule.forEach((day) => {
+            const card = document.getElementById(`day-card-${day.dayNumber}`);
+            if (!card) return;
+            const corridorSmall = card.querySelector(".day-route-title + small");
+            if (corridorSmall && day.osmSummary) {
+              const corridorLabel = tr("corridor_label", "Corridor");
+              corridorSmall.textContent = `${corridorLabel}: ${day.osmSummary} (OpenStreetMap)`;
+            }
+          });
+        }
+
+        function tr(key, fallback) {
+          if (window.I18N && typeof window.I18N.t === "function") {
+            const val = window.I18N.t(key);
+            if (val && val !== key) return val;
+          }
+          return fallback;
+        }
+
+        function updatePresetChipLabels() {
+          const daysSuffix = tr("days_suffix", "Days");
+          document.querySelectorAll(".preset-chip").forEach((chip) => {
+            const d = chip.dataset.days;
+            chip.innerHTML = `${d} <span data-i18n="days_suffix">${daysSuffix}</span>`;
+          });
+          const c1 = document.getElementById("sample-corridor-1");
+          if (c1) c1.textContent = `5 ${daysSuffix} (3,749 km)`;
+          const c2 = document.getElementById("sample-corridor-2");
+          if (c2) c2.textContent = `3 ${daysSuffix} (1,616 km)`;
+          const c3 = document.getElementById("sample-corridor-3");
+          if (c3) c3.textContent = `4 ${daysSuffix} (1,670 km)`;
+          const c4 = document.getElementById("sample-corridor-4");
+          if (c4) c4.textContent = `2 ${daysSuffix} (450 km ${tr("ghat_tag", "Ghat")})`;
+        }
+
+        function renderPlanResults(plan) {
+          if (!plan) return;
+
+          // 1. Render Metrics Banner
+          document.getElementById("trip-metrics-container").style.display = "grid";
+          document.getElementById("metric-total-dist").textContent = `${plan.totalDistanceKm.toLocaleString()} km`;
+          const daysSuffix = plan.requestedDays > 1 ? tr("days_suffix", "Days") : tr("day_suffix", "Day");
+          document.getElementById("metric-total-days").textContent = `${plan.requestedDays} ${daysSuffix}`;
+          document.getElementById("metric-avg-daily").textContent = `${plan.averageDailyKm} km`;
+          
+          const totalHours = Math.round(plan.schedule.reduce((acc, d) => acc + d.drivingTimeMinutes, 0) / 60);
+          document.getElementById("metric-est-time").textContent = `~${totalHours} ${tr("hrs_suffix", "hrs")}`;
+
+          // 2. Render Feasibility Banner
+          const banner = document.getElementById("feasibility-banner");
+          const icon = document.getElementById("feasibility-icon");
+          const title = document.getElementById("feasibility-title");
+          const desc = document.getElementById("feasibility-desc");
+          const actionBox = document.getElementById("feasibility-action-box");
+          const recDaysNum = document.getElementById("rec-days-num");
+
+          banner.style.display = "flex";
+          banner.className = `feasibility-box feasibility-${plan.feasibility.status.toLowerCase()}`;
+
+          if (plan.feasibility.isUnrealistic) {
+            icon.textContent = "🚨";
+            title.textContent = tr("feasibility_unrealistic_title", "Unrealistic Schedule for Goods Transport");
+            const tpl = tr("feasibility_unrealistic_desc", "{0} km in {1} days requires ~{2} km/day. Heavy commercial vehicles average 400-500 km/day on Indian highway corridors. Recommended minimum: {3} days.");
+            desc.textContent = tpl
+              .replace("{0}", plan.totalDistanceKm.toLocaleString())
+              .replace("{1}", plan.requestedDays)
+              .replace("{2}", plan.averageDailyKm)
+              .replace("{3}", plan.realisticSuggestedDays);
+            actionBox.style.display = "block";
+            recDaysNum.textContent = plan.realisticSuggestedDays;
+          } else if (plan.feasibility.isDemanding) {
+            icon.textContent = "⚠️";
+            title.textContent = tr("feasibility_demanding_title", "Demanding Long-Haul Schedule");
+            const tpl = tr("feasibility_demanding_desc", "{0} km in {1} days averages ~{2} km/day. This requires sustained driving with minimal buffer for ghat passes or toll delays. Recommended: {3} days.");
+            desc.textContent = tpl
+              .replace("{0}", plan.totalDistanceKm.toLocaleString())
+              .replace("{1}", plan.requestedDays)
+              .replace("{2}", plan.averageDailyKm)
+              .replace("{3}", plan.realisticSuggestedDays);
+            actionBox.style.display = "block";
+            recDaysNum.textContent = plan.realisticSuggestedDays;
+          } else if (plan.feasibility.isRelaxed) {
+            icon.textContent = "ℹ️";
+            title.textContent = tr("feasibility_relaxed_title", "Relaxed Travel Schedule");
+            const tpl = tr("feasibility_relaxed_desc", "{0} km across {1} days (~{2} km/day) provides generous transit buffer with very low fatigue risk.");
+            desc.textContent = tpl
+              .replace("{0}", plan.totalDistanceKm.toLocaleString())
+              .replace("{1}", plan.requestedDays)
+              .replace("{2}", plan.averageDailyKm);
+            actionBox.style.display = "none";
+          } else {
+            icon.textContent = "✅";
+            title.textContent = tr("feasibility_optimal_title", "Optimal Freight Schedule");
+            const tpl = tr("feasibility_optimal_desc", "Balanced ~{0} km/day driving pace aligned with commercial driver rest norms.");
+            desc.textContent = tpl.replace("{0}", plan.averageDailyKm);
+            actionBox.style.display = "none";
+          }
+
+          // 3. Actions Bar & Full Google Maps Link
+          document.getElementById("planner-actions-bar").style.display = "flex";
+          document.getElementById("btn-full-gmaps").href = plan.fullTripGmapsUrl;
+
+          // 4. Render Day-by-Day Cards
+          const listContainer = document.getElementById("daily-schedule-list");
+          listContainer.innerHTML = "";
+
+          const dayBadgeTpl = tr("day_card_badge", "DAY {0} OF {1}");
+          const corridorLabel = tr("corridor_label", "Corridor");
+          const transitLabel = tr("transit_label", "transit");
+          const middayTitle = tr("midday_break", "Suggested Midday Break");
+          const labelFacility = tr("label_facility", "Facility:");
+          const labelAmenities = tr("label_amenities", "Amenities:");
+          const overnightTitle = tr("overnight_staging", "Overnight Staging");
+          const labelTargetCity = tr("label_target_city", "Target City:");
+          const labelFacilities = tr("label_facilities", "Facilities:");
+          const openDayTpl = tr("btn_open_day_gmaps", "Open Day {0} in Google Maps");
+          const btnListenText = tr("btn_listen", "Listen");
+          const btnViewLegText = tr("btn_view_leg_map", "View Leg on Map");
+
+          plan.schedule.forEach((day) => {
+            const card = document.createElement("div");
+            card.className = "day-card";
+            card.id = `day-card-${day.dayNumber}`;
+
+            const badgeText = dayBadgeTpl.replace("{0}", day.dayNumber).replace("{1}", plan.requestedDays);
+            const openDayText = openDayTpl.replace("{0}", day.dayNumber);
+
+            const highwayCorridorText = day.highwayCorridorKey ? tr(day.highwayCorridorKey, day.highwayCorridor) : day.highwayCorridor;
+            const middayFacility = day.middayBreak.facilityTypeKey ? tr(day.middayBreak.facilityTypeKey, day.middayBreak.facilityType) : day.middayBreak.facilityType;
+            const middayTime = day.middayBreak.suggestedTimeKey ? tr(day.middayBreak.suggestedTimeKey, day.middayBreak.suggestedTime) : day.middayBreak.suggestedTime;
+            const middayAmenities = day.middayBreak.amenitiesKey ? tr(day.middayBreak.amenitiesKey, day.middayBreak.amenities) : day.middayBreak.amenities;
+            const overnightAmenities = day.overnightStaging.amenitiesKey ? tr(day.overnightStaging.amenitiesKey, day.overnightStaging.amenities) : day.overnightStaging.amenities;
+            const safetyAdvisoryText = day.safetyAdvisoryKey ? tr(day.safetyAdvisoryKey, day.safetyAdvisory) : day.safetyAdvisory;
+
+            card.innerHTML = `
+              <div class="day-card-header">
+                <div>
+                  <span class="day-badge">📅 ${badgeText}</span>
+                  <h3 class="day-route-title" style="margin-top: 6px;">
+                    ${day.startingPoint} ➔ ${day.destinationPoint}
+                  </h3>
+                  <small style="color: var(--text-muted); font-size: 12px;">${corridorLabel}: ${highwayCorridorText}</small>
+                </div>
+                <div style="text-align: right;">
+                  <span class="day-stats-pill">
+                    🛣️ ${day.distanceKm} km · ⏱️ ${day.drivingTimeStr} ${transitLabel}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Suggested Midday Break Stop -->
+              <div class="amenity-block" style="border-left: 3px solid var(--amber);">
+                <span class="amenity-icon">☕</span>
+                <div>
+                  <span class="amenity-title">${middayTitle}: ${day.middayBreak.name}</span>
+                  <div class="amenity-desc">
+                    <strong>${labelFacility}</strong> ${middayFacility} · <em>${middayTime}</em><br/>
+                    <strong>${labelAmenities}</strong> ${middayAmenities}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Suggested Overnight Staging Point -->
+              <div class="amenity-block" style="border-left: 3px solid var(--accent); margin-top: 8px;">
+                <span class="amenity-icon">🏨</span>
+                <div>
+                  <span class="amenity-title">${overnightTitle}: ${day.overnightStaging.name}</span>
+                  <div class="amenity-desc">
+                    <strong>${labelTargetCity}</strong> ${day.overnightStaging.city}<br/>
+                    <strong>${labelFacilities}</strong> ${overnightAmenities}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Daily Advisory -->
+              <div style="margin-top: 10px; font-size: 12.5px; color: var(--text-muted); background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line);">
+                ${safetyAdvisoryText}
+              </div>
+
+              <!-- Actions -->
+              <div class="day-card-actions">
+                <a href="${day.googleMapsUrl}" target="_blank" rel="noopener" class="btn-day-gmaps">
+                  <span>🧭</span> ${openDayText}
+                </a>
+                <button type="button" class="btn-listen" onclick="window.speakDaySchedule(${day.dayNumber})">
+                  <span>🔊</span> ${btnListenText}
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="window.zoomToDayLeg(${day.dayNumber})">
+                  🔍 ${btnViewLegText}
+                </button>
+              </div>
+            `;
+
+            listContainer.appendChild(card);
+          });
+
+          // 5. Update Leaflet Map with Route and Markers
+          renderMapVisuals(plan);
+        }
+
+        function renderMapVisuals(plan) {
+          initLeafletMap();
+          if (!mapInstance || !mapLayerGroup) return;
+
+          mapLayerGroup.clearLayers();
+          dayLegPolylines = {};
+
+          const dayDestPopupTpl = tr("day_dest_popup", "Day {0} Destination");
+          const journeyStartTpl = tr("journey_start_popup", "Journey Starting Point");
+          const allLegBounds = [];
+
+          // 1. Draw each daily leg with its real OpenStreetMap highway geometry and distinct color
+          plan.schedule.forEach((day, idx) => {
+            const legColor = LEG_COLORS[idx % LEG_COLORS.length];
+            const legCoords = (day.osmWaypoints && day.osmWaypoints.length > 0)
+              ? day.osmWaypoints
+              : [
+                  [day.startingHub.lat, day.startingHub.lng],
+                  [day.destinationHub.lat, day.destinationHub.lng]
+                ];
+
+            // Real highway road polyline
+            const dayPolyline = L.polyline(legCoords, {
+              color: legColor,
+              weight: 5.5,
+              opacity: 0.92,
+              lineCap: "round",
+              lineJoin: "round",
+              smoothFactor: 1.0,
+            }).addTo(mapLayerGroup);
+
+            // Polyline tooltip & popup
+            dayPolyline.bindPopup(`
+              <div style="font-size:12.5px; line-height:1.45;">
+                <strong style="color:${legColor}; font-size:13px;">📅 ${day.dayLabel}: ${day.startingPoint} ➔ ${day.destinationPoint}</strong><br/>
+                🛣️ <strong>${day.osmDistanceKm || day.distanceKm} km</strong> · ⏱️ <strong>${day.drivingTimeStr}</strong><br/>
+                <small style="color:#64748b;">🛣️ ${day.highwayCorridor}</small>
+              </div>
+            `);
+
+            // Interactive hover & click effects
+            dayPolyline.on("mouseover", function () {
+              this.setStyle({ weight: 8.5, opacity: 1 });
+              this.bringToFront();
+            });
+            dayPolyline.on("mouseout", function () {
+              this.setStyle({ weight: 5.5, opacity: 0.92 });
+            });
+            dayPolyline.on("click", function () {
+              window.zoomToDayLeg(day.dayNumber);
+            });
+
+            dayLegPolylines[day.dayNumber] = dayPolyline;
+            allLegBounds.push(dayPolyline.getBounds());
+
+            // Add Day End Marker
+            const markerIcon = L.divIcon({
+              className: "custom-day-pin",
+              html: `<div style="background:${legColor}; color:#fff; font-weight:800; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.3); font-size:12px; cursor:pointer;" title="Day ${day.dayNumber}">${day.dayNumber}</div>`,
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+            });
+
+            const dayMarker = L.marker([day.destinationHub.lat, day.destinationHub.lng], { icon: markerIcon })
+              .addTo(mapLayerGroup)
+              .bindPopup(`
+                <div style="font-size:12.5px; line-height:1.45;">
+                  <strong style="color:${legColor};">📅 ${dayDestPopupTpl.replace("{0}", day.dayNumber)}</strong><br/>
+                  <strong>${day.destinationPoint}</strong><br/>
+                  🛣️ ${day.osmDistanceKm || day.distanceKm} km · ⏱️ ${day.drivingTimeStr}<br/>
+                  🏨 <small>${day.overnightStaging.name}</small>
+                </div>
+              `);
+
+            dayMarker.on("click", () => {
+              window.zoomToDayLeg(day.dayNumber);
+            });
+          });
+
+          // 2. Add Start Marker
+          const startLabel = tr("start_caps", "START");
+          const startIcon = L.divIcon({
+            className: "custom-start-pin",
+            html: `<div style="background:#16a34a; color:#fff; font-weight:800; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); font-size:10px;">${startLabel}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          });
+
+          L.marker([plan.origin.lat, plan.origin.lng], { icon: startIcon })
+            .addTo(mapLayerGroup)
+            .bindPopup(`<strong>${journeyStartTpl}</strong><br/>${plan.origin.name}`);
+
+          // 3. Add Destination Flag Marker
+          const destIcon = L.divIcon({
+            className: "custom-dest-pin",
+            html: `<div style="background:#dc2626; color:#fff; font-weight:800; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); font-size:15px;">🏁</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          });
+
+          L.marker([plan.destination.lat, plan.destination.lng], { icon: destIcon })
+            .addTo(mapLayerGroup)
+            .bindPopup(`<strong>🏁 ${plan.destination.name}</strong>`);
+
+          // 4. Fit bounds safely to full road network
+          setTimeout(() => {
+            if (mapInstance) {
+              mapInstance.invalidateSize();
+              if (plan.osmFullWaypoints && plan.osmFullWaypoints.length > 0) {
+                const fullBounds = L.latLngBounds(plan.osmFullWaypoints);
+                if (fullBounds.isValid()) {
+                  mapInstance.fitBounds(fullBounds, { padding: [40, 40] });
+                }
+              } else if (allLegBounds.length > 0) {
+                const combined = allLegBounds.reduce((acc, b) => acc.extend(b), L.latLngBounds());
+                if (combined.isValid()) {
+                  mapInstance.fitBounds(combined, { padding: [40, 40] });
+                }
+              }
+            }
+          }, 150);
+        }
+
+        window.zoomToDayLeg = function (dayNumber) {
+          if (!currentTripPlan || !mapInstance) return;
+          const day = currentTripPlan.schedule.find((d) => d.dayNumber === dayNumber);
+          if (!day) return;
+
+          mapInstance.invalidateSize();
+
+          // If real OSM highway geometry exists, fit to exact road curves
+          if (day.osmWaypoints && day.osmWaypoints.length > 0) {
+            const bounds = L.latLngBounds(day.osmWaypoints);
+            if (bounds.isValid()) {
+              mapInstance.fitBounds(bounds, { padding: [60, 60] });
+            }
+          } else {
+            const bounds = L.latLngBounds([
+              [day.startingHub.lat, day.startingHub.lng],
+              [day.destinationHub.lat, day.destinationHub.lng],
+            ]);
+            if (bounds.isValid()) {
+              mapInstance.fitBounds(bounds, { padding: [60, 60] });
+            }
+          }
+
+          // Visual highlight animation on the active leg polyline
+          const line = dayLegPolylines[dayNumber];
+          if (line) {
+            const origColor = LEG_COLORS[(dayNumber - 1) % LEG_COLORS.length];
+            line.setStyle({ weight: 9.5, opacity: 1, color: "#f43f5e" });
+            line.bringToFront();
+            setTimeout(() => {
+              line.setStyle({ weight: 5.5, opacity: 0.92, color: origColor });
+            }, 2500);
+          }
+
+          const card = document.getElementById(`day-card-${dayNumber}`);
+          if (card) {
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+            card.style.borderColor = "#0284c7";
+            card.style.boxShadow = "0 0 0 3px rgba(2, 132, 199, 0.25)";
+            setTimeout(() => {
+              card.style.borderColor = "";
+              card.style.boxShadow = "";
+            }, 2500);
+          }
+        };
+
+        window.speakDaySchedule = function (dayNumber) {
+          if (!currentTripPlan || !window.NE8_VOICE) return;
+          const day = currentTripPlan.schedule.find((d) => d.dayNumber === dayNumber);
+          if (!day) return;
+
+          const currentLang = window.I18N ? window.I18N.getLanguage() : "en";
+          const text = `${day.dayLabel}: ${day.startingPoint} ➔ ${day.destinationPoint}. ${day.distanceKm} km, ${day.drivingTimeStr}. ${tr("midday_break", "Midday Break")}: ${day.middayBreak.name}. ${tr("overnight_staging", "Overnight Staging")}: ${day.overnightStaging.name}.`;
+          window.NE8_VOICE.speak(text, { lang: currentLang });
+        };
+
+        // Reactive language change listener
+        window.addEventListener("saferoute:lang-changed", (e) => {
+          const lang = (e.detail && e.detail.lang) || (window.I18N ? window.I18N.getLanguage() : "en");
+          const select = document.querySelector(".lang-select-input");
+          if (select && select.value !== lang) {
+            select.value = lang;
+          }
+          updatePresetChipLabels();
+          if (window.I18N && window.I18N.applyTranslations) {
+            window.I18N.applyTranslations(document.body);
+          }
+          if (currentTripPlan) {
+            renderPlanResults(currentTripPlan);
+            const isLive = currentTripPlan.osmStatus === "LIVE_CONNECTED";
+            setOsmStatusBarState(isLive ? "connected" : "fallback", currentTripPlan);
+          }
+        });
+
+        // Auto-run on page load with query parameters or default "Kerala" to "Assam" (5 Days)
+        window.addEventListener("DOMContentLoaded", () => {
+          initLeafletMap();
+          const currentLang = window.I18N ? window.I18N.getLanguage() : "en";
+          const select = document.querySelector(".lang-select-input");
+          if (select) select.value = currentLang;
+          updatePresetChipLabels();
+          if (window.I18N && window.I18N.applyTranslations) {
+            window.I18N.applyTranslations(document.body);
+          }
+
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const orig = params.get("origin");
+            const dest = params.get("destination");
+            const days = params.get("days");
+            if (orig) {
+              const origEl = document.getElementById("planner-origin");
+              if (origEl) origEl.value = orig;
+            }
+            if (dest) {
+              const destEl = document.getElementById("planner-dest");
+              if (destEl) destEl.value = dest;
+            }
+            if (days) {
+              const daysEl = document.getElementById("planner-days");
+              if (daysEl) daysEl.value = days;
+            }
+          } catch (e) {
+            console.warn("Could not parse query parameters:", e);
+          }
+          window.calculateDriverTripPlan();
+        });
+
+        // Keep map viewport responsive on resize
+        window.addEventListener("resize", () => {
+          if (mapInstance) {
+            mapInstance.invalidateSize();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

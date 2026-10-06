@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SafeRoute Driver Companion · Road &amp; Weather Safety</title>
+    <meta name="description" content="Mobile-first self-directed road safety, candidate route evaluation, voice guidance, and quick hazard reporting utility for freight drivers." />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Multi-Language Indic Google Fonts Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet & MapLibre Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <style>
+      /* Driver Daylight Light-First Specific Polish */
+      .driver-nav-input {
+        width: 100%;
+        box-sizing: border-box;
+        background: #ffffff;
+        border: 1.5px solid var(--line-strong);
+        color: var(--text);
+        padding: 12px 14px;
+        border-radius: var(--radius);
+        font-size: 15px;
+        min-height: 48px;
+        outline: none;
+        transition: border-color 0.15s ease;
+      }
+      .driver-nav-input:focus {
+        border-color: var(--accent);
+      }
+      .recent-item-btn {
+        width: 100%;
+        text-align: left;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        min-height: 44px;
+        transition: background-color 0.15s;
+      }
+      .recent-item-btn:hover {
+        background: var(--bg-inset);
+      }
+    
+      /* SafeRoute Driver Copilot Floating Button & Chat */
+      .btn-copilot-floating {
+        position: fixed;
+        bottom: 76px;
+        right: 16px;
+        z-index: 990;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--navy-dark, #0f172a);
+        color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-radius: 30px;
+        padding: 9px 15px;
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        transition: transform 0.2s, background-color 0.2s;
+      }
+      .btn-copilot-floating:hover {
+        transform: translateY(-2px);
+        background: var(--accent, #2563eb);
+      }
+      .copilot-pulse {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: copilot-pulse-anim 2s infinite;
+      }
+      @keyframes copilot-pulse-anim {
+        0% { opacity: 0.4; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1.3); }
+        100% { opacity: 0.4; transform: scale(0.9); }
+      }
+      .copilot-chip {
+        background: var(--bg-inset, #f1f5f9);
+        border: 1px solid var(--line, #cbd5e1);
+        color: var(--text, #1e293b);
+        border-radius: 16px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background-color 0.15s;
+      }
+      .copilot-chip:hover {
+        background: #e2e8f0;
+      }
+      .copilot-msg {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+      .copilot-msg-ai {
+        align-self: flex-start;
+        background: #f8fafc;
+        border: 1px solid var(--line, #cbd5e1);
+        color: var(--text, #0f172a);
+        border-bottom-left-radius: 4px;
+      }
+      .copilot-msg-user {
+        align-self: flex-end;
+        background: var(--navy-dark, #0f172a);
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+      }
+      .copilot-listen-btn {
+        font-size: 11px;
+        padding: 4px 9px;
+        border-radius: 5px;
+        min-height: 26px;
+        background: #ffffff;
+        border: 1px solid var(--line, #cbd5e1);
+        color: var(--text, #0f172a);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+    </style>
+  </head>
+  <body class="driver-body">
+    <!-- Top Global Role Switcher Banner with Language Selector -->
+    <div class="role-switcher-banner">
+      <div class="role-switcher-left">
+        <span class="role-switcher-tag" data-i18n="role_driver">📱 Driver</span>
+        <span id="driver-connection-badge" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; color:var(--green); font-size:11px;">
+          <span style="width:7px; height:7px; border-radius:50%; background:var(--green);"></span> <span data-i18n="online">Online</span>
+        </span>
+      </div>
+
+      <div class="role-switcher-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile-First Driver Container -->
+    <div class="driver-pwa-container">
+      <!-- Top Sticky App Bar -->
+      <header class="driver-top-header">
+        <a class="driver-logo-brand" href="driver.html">
+          <span class="driver-logo-badge">SR</span>
+          <div>
+            <strong style="font-size: 15px; display: block; line-height: 1.2;" data-i18n="app_name">SafeRoute</strong>
+            <small style="font-size: 11px; color: #94a3b8;" id="driver-vehicle-tag">AS-01-EB-101 · R. Sharma</small>
+          </div>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-sos-nav" id="btn-driver-top-sos" aria-label="Emergency SOS">
+            <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+          </button>
+          <div id="driver-status-chip" class="driver-status-chip pill-safe">
+            🟢 SELF-DIRECTED
+          </div>
+          <button type="button" id="btn-driver-logout" title="Sign out" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; min-height: 32px;" data-i18n="btn_sign_out">
+            Sign Out
+          </button>
+        </div>
+      </header>
+
+      <!-- Official Highway Authority Emergency Alert Banner -->
+      <div id="driver-official-alert-banner" style="display: none; margin: 12px 14px 4px 14px; background: #fef2f2; border: 2px solid #ef4444; border-radius: var(--radius); padding: 14px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.18); position: relative; z-index: 90;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;" id="driver-alert-icon">🚨</span>
+            <div>
+              <span id="driver-alert-badge-tag" style="font-size: 11px; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px;">OFFICIAL EMERGENCY ALERT · HIGHWAY AUTHORITY</span>
+              <h4 id="driver-alert-title" style="margin: 2px 0 0 0; font-size: 15px; font-weight: 800; color: #991b1b;"></h4>
+            </div>
+          </div>
+          <span class="pill pill-risk" id="driver-alert-severity" style="font-size: 10px;">CRITICAL</span>
+        </div>
+        <p id="driver-alert-instructions" style="margin: 0 0 10px 0; font-size: 13px; color: #7f1d1d; line-height: 1.45;"></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(239,68,68,0.3); padding-top: 8px;">
+          <div style="font-size: 11px; color: #991b1b;">
+            Corridor: <strong id="driver-alert-corridor"></strong> · By: <span id="driver-alert-officer"></span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-listen" id="btn-listen-official-alert" style="background: #ffffff; border-color: #ef4444; color: #dc2626; font-size: 11.5px; padding: 4px 10px; min-height: 30px;">
+              <span>🔊</span> <span>Listen</span>
+            </button>
+            <button type="button" id="btn-dismiss-official-alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #991b1b; font-size: 11.5px; font-weight: 700; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 1: ROUTE SEARCH & CANDIDATE EVALUATION
+           =================================================================== -->
+      <section id="view-driver-route" class="driver-view-section active">
+        <!-- Where are you going Header -->
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h1 style="font-size: 22px; font-weight: 800; color: var(--navy-dark); margin: 0 0 4px 0;" data-i18n="driver_home_title">
+              Where are you going?
+            </h1>
+            <button type="button" class="btn-listen" id="btn-listen-home" data-voice-text="SafeRoute helps you choose the best route based on live weather and road hazards. Enter where you want to go.">
+              <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+            </button>
+          </div>
+          <p style="color: var(--text-muted); font-size: 13px;" data-i18n="driver_home_sub">
+            SafeRoute evaluates live weather, mountain reports, and road hazards to recommend the best route.
+          </p>
+        </div>
+
+        <!-- Route Input Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <span class="driver-card-title" data-i18n="plan_your_route">PLAN YOUR ROUTE</span>
+            <button type="button" id="btn-use-gps" style="background:var(--accent-soft); border:1px solid var(--accent-border); color:var(--accent-hover); font-size:11.5px; font-weight:700; border-radius:6px; padding:5px 10px; cursor:pointer; min-height:34px;" data-i18n="btn_use_gps">
+              📍 Use Current GPS
+            </button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px;">
+            <div>
+              <label data-i18n="label_origin">Starting Location (Origin)</label>
+              <input
+                type="text"
+                id="input-origin"
+                value="Guwahati, Assam"
+                class="driver-nav-input"
+                data-i18n-ph="ph_origin"
+                placeholder="Enter city or starting point"
+              />
+            </div>
+
+            <div>
+              <label data-i18n="label_dest">Destination</label>
+              <input
+                type="text"
+                id="input-destination"
+                value="Shillong, Meghalaya"
+                class="driver-nav-input"
+                data-i18n-ph="ph_dest"
+                placeholder="Enter city or destination"
+              />
+            </div>
+          </div>
+
+          <!-- Quick Corridor Chips -->
+          <div style="margin-bottom: 14px;">
+            <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 700;" data-i18n="popular_corridors">
+              Popular Northeast Corridors:
+            </span>
+            <div class="corridor-chips-row">
+              <button type="button" class="corridor-chip" data-orig="Guwahati, Assam" data-dest="Shillong, Meghalaya">Guwahati ➔ Shillong</button>
+              <button type="button" class="corridor-chip" data-orig="Silchar, Assam" data-dest="Imphal, Manipur">Silchar ➔ Imphal</button>
+              <button type="button" class="corridor-chip" data-orig="Dimapur, Nagaland" data-dest="Kohima, Nagaland">Dimapur ➔ Kohima</button>
+              <button type="button" class="corridor-chip" data-orig="Guwahati, Assam" data-dest="Tezpur, Assam">Guwahati ➔ Tezpur</button>
+              <button type="button" class="corridor-chip" data-orig="Jorhat, Assam" data-dest="Dibrugarh, Assam">Jorhat ➔ Dibrugarh</button>
+            </div>
+          </div>
+
+          <!-- Find Route Button (Large 48px target) -->
+          <button type="button" class="btn-driver-primary" id="btn-find-routes">
+            <span>🔍</span> <span data-i18n="btn_find_route">Find Best Route</span>
+          </button>
+        </div>
+
+        <!-- Secondary Home Shortcuts -->
+        <div id="driver-home-secondary-sections" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px;">
+          <!-- Recent Journeys Card -->
+          <div class="driver-card" style="padding: 14px 16px;">
+            <div class="driver-card-header" style="margin-bottom: 10px;">
+              <span class="driver-card-title" data-i18n="recent_journeys">🕒 RECENT JOURNEYS</span>
+              <small style="font-size: 11px; color: var(--muted);" data-i18n="tap_to_load">Tap to load</small>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button type="button" class="recent-item-btn recent-journey-item" data-orig="Guwahati, Assam" data-dest="Shillong, Meghalaya">
+                <div>
+                  <strong style="font-size: 13px; color: var(--text); display:block;">Guwahati ➔ Shillong</strong>
+                  <span style="font-size: 11.5px; color: var(--text-muted);"><span data-i18n="yesterday_prefix">Yesterday</span> · 98 km · 2h 20m</span>
+                </div>
+                <span class="pill pill-safe">Open</span>
+              </button>
+              <button type="button" class="recent-item-btn recent-journey-item" data-orig="Silchar, Assam" data-dest="Imphal, Manipur">
+                <div>
+                  <strong style="font-size: 13px; color: var(--text); display:block;">Silchar ➔ Imphal</strong>
+                  <span style="font-size: 11.5px; color: var(--text-muted);">3 <span data-i18n="days_ago_prefix">days ago</span> · 240 km · 6h 10m</span>
+                </div>
+                <span class="pill pill-safe">Open</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Saved Places Card -->
+          <div class="driver-card" style="padding: 14px 16px;">
+            <div class="driver-card-header" style="margin-bottom: 10px;">
+              <span class="driver-card-title" data-i18n="saved_places">⭐ SAVED PLACES</span>
+              <small style="font-size: 11px; color: var(--muted);" data-i18n="quick_dest">Quick destination</small>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button type="button" class="btn-saved-place recent-item-btn" data-place="Beltola Central Hub, Guwahati" style="font-size: 12px; font-weight: 600;" data-i18n="saved_place_hub">
+                🏢 Central Hub (Guwahati)
+              </button>
+              <button type="button" class="btn-saved-place recent-item-btn" data-place="Civil Hospital Depot, Shillong" style="font-size: 12px; font-weight: 600;" data-i18n="saved_place_medical">
+                🏥 Medical Depot (Shillong)
+              </button>
+              <button type="button" class="btn-saved-place recent-item-btn" data-place="Agricultural Mandi, Jorhat" style="font-size: 12px; font-weight: 600;" data-i18n="saved_place_agri">
+                🌾 Agri Mandi (Jorhat)
+              </button>
+              <button type="button" class="btn-saved-place recent-item-btn" data-place="Rail Freight Yard, Dimapur" style="font-size: 12px; font-weight: 600;" data-i18n="saved_place_rail">
+                🏗️ Rail Yard (Dimapur)
+              </button>
+            </div>
+          </div>
+
+          <!-- Mountain Corridor Alerts -->
+          <div class="driver-card" style="padding: 14px 16px;">
+            <div class="driver-card-header" style="margin-bottom: 10px;">
+              <span class="driver-card-title" data-i18n="recent_alerts">⚠️ MOUNTAIN ALERTS</span>
+              <button type="button" class="btn-listen" id="btn-listen-alerts">
+                <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+              </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+              <div style="background: var(--amber-soft); border: 1px solid var(--amber-border); padding: 9px 12px; border-radius: 6px; color: var(--amber-text);">
+                <strong data-i18n="route_barapani_ridge">Barapani Ridge (NH-6):</strong> <span data-i18n="route_barapani_desc">Single-lane crawl advised during rainfall; maintenance on shoulder.</span>
+              </div>
+              <div style="background: var(--blue-soft); border: 1px solid var(--blue-border); padding: 9px 12px; border-radius: 6px; color: var(--blue-text);">
+                <strong data-i18n="route_cherra_spur">Cherrapunji Spur:</strong> <span data-i18n="route_cherra_desc">IMD reports sudden mist and visibility drop below 90m.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route Results Container (Populated dynamically) -->
+        <div id="route-results-area" style="display: none;">
+          <!-- Recommended Route Card -->
+          <div class="driver-card" style="border: 2px solid var(--green); background: #ffffff;">
+            <div class="driver-card-header">
+              <span class="pill pill-safe" style="font-size: 11px; font-weight: 800;" data-i18n="rec_route_badge">
+                RECOMMENDED (Current Available Conditions)
+              </span>
+              <button type="button" class="btn-listen" id="btn-listen-rec-route">
+                <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+              </button>
+            </div>
+
+            <h2 id="rec-route-title" style="margin: 4px 0 6px 0; font-size: 19px; font-weight: 800; color: var(--navy-dark);">
+              Primary Highway Corridor (NH Route)
+            </h2>
+            <div style="font-size: 14px; color: var(--accent); font-weight: 700; margin-bottom: 14px;" id="rec-route-meta">
+              98 km · 2h 20m estimated transit
+            </div>
+
+            <!-- "Why this route?" checklist & AI Explanation -->
+            <div class="why-route-box">
+              <div class="why-route-title">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span data-i18n="why_this_route">Why this route?</span>
+                  <span id="why-ai-badge" class="pill pill-safe" style="font-size: 10px; font-weight: 700; padding: 2px 7px;">Evidence Evaluated</span>
+                </div>
+                <button type="button" class="btn-listen" id="btn-listen-why">
+                  <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+                </button>
+              </div>
+              <div id="rec-route-ai-summary" style="display: none; font-size: 13.5px; line-height: 1.5; color: var(--navy-dark); margin: 6px 0 10px 0; font-weight: 500; background: #ffffff; padding: 10px 12px; border-radius: 6px; border-left: 3px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.05);"></div>
+              <ul class="why-route-list" id="rec-route-checklist">
+                <li class="why-route-item">Lower current weather exposure based on available IMD telemetry</li>
+                <li class="why-route-item">No recent major road damage reports on primary transit lanes</li>
+                <li class="why-route-item">Avoids reported affected zones along secondary passes</li>
+              </ul>
+            </div>
+
+            <!-- Structured Technical Factors Accordion [ VIEW DETAILS ] -->
+            <div class="route-tech-details" style="margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px;">
+              <button type="button" id="btn-toggle-tech-details" style="background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 6px 0; min-height: 40px;">
+                <span data-i18n="btn_view_details">📊 [ VIEW DETAILS ] Technical Factors</span>
+                <span id="tech-details-arrow">▼</span>
+              </button>
+              <div id="tech-details-content" style="display: none; margin-top: 8px; background: var(--bg-inset); border-radius: var(--radius-sm); padding: 12px; font-size: 12.5px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+                  <div>
+                    <span style="color: var(--muted); display: block; font-size: 11px; text-transform: uppercase;" data-i18n="label_weather_risk">Weather Risk</span>
+                    <strong id="tech-weather-risk" style="color: var(--green-text);">Low</strong>
+                  </div>
+                  <div>
+                    <span style="color: var(--muted); display: block; font-size: 11px; text-transform: uppercase;" data-i18n="label_road_risk">Road Surface Risk</span>
+                    <strong id="tech-road-risk" style="color: var(--accent-hover);">Low</strong>
+                  </div>
+                  <div>
+                    <span style="color: var(--muted); display: block; font-size: 11px; text-transform: uppercase;" data-i18n="label_traffic_risk">Traffic Congestion</span>
+                    <strong id="tech-traffic" style="color: var(--text);">Light</strong>
+                  </div>
+                  <div>
+                    <span style="color: var(--muted); display: block; font-size: 11px; text-transform: uppercase;" data-i18n="label_confidence">Data Confidence</span>
+                    <strong id="tech-confidence" style="color: var(--green-text);">High (92%)</strong>
+                  </div>
+                </div>
+                <div style="border-top: 1px solid var(--line); padding-top: 8px; font-size: 11.5px; color: var(--text-muted);">
+                  <span data-i18n="label_freshness">Telemetry Freshness:</span> <span id="tech-freshness" style="color: var(--text); font-weight: 600;">Updated within 30m</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIMARY ACTIONS: Start Navigation & Launch Google Maps Navigation -->
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+              <!-- 1. Open in Google Maps -->
+              <button type="button" class="btn-driver-gmaps" id="btn-launch-gmaps" style="padding: 12px 16px; font-size: 14px;">
+                <span>🧭</span> <strong data-i18n="btn_open_gmaps_hud">Open in Google Maps (Turn-by-Turn GPS)</strong>
+              </button>
+              <small style="text-align: center; color: var(--text-muted); font-size: 11.5px;" data-i18n="gmaps_transparent_note">
+                SafeRoute recommends this route based on current conditions. Google Maps provides turn-by-turn navigation.
+              </small>
+
+              <!-- 2. Open in Interactive OpenStreetMap -->
+              <button type="button" class="btn-driver-secondary" id="btn-start-nav-companion" style="padding: 12px 16px; font-size: 13.5px; font-weight: 700; background: var(--bg-inset); border: 2px solid var(--navy);">
+                <span>🗺️</span> <strong data-i18n="btn_view_osm_hud">View on OpenStreetMap (Live Hazards HUD)</strong>
+              </button>
+            </div>
+          </div>
+
+          <!-- Alternative Routes Container -->
+          <div style="margin-top: 18px; margin-bottom: 14px;">
+            <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px 0; letter-spacing: 0.5px;" data-i18n="alt_routes_title">
+              Alternative Routes
+            </h3>
+            <div id="alt-routes-list"></div>
+          </div>
+
+          <!-- Strict Non-Certainty Disclaimer Alert -->
+          <div class="driver-card" style="background: var(--bg-inset); padding: 12px; font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+            <strong style="color: var(--text); display: block; margin-bottom: 2px;" data-i18n="routing_advisory_title">ℹ️ Routing Advisory Notice:</strong>
+            <span data-i18n="rec_route_disclaimer">Recommended based on current available conditions. Mountain weather and road conditions can change rapidly. SafeRoute does not guarantee road conditions. Always observe road signs and local transport directives.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2: NAVIGATION HUD & FUNCTIONAL REROUTING
+           =================================================================== -->
+      <section id="view-driver-nav" class="driver-view-section" style="padding-top: 10px;">
+        <!-- Reroute Notification Banner (Appears dynamically during rerouting) -->
+        <div id="nav-reroute-banner" class="reroute-banner" style="display: none;">
+          <div class="reroute-title">
+            <span>🔄 <span data-i18n="route_updated_title">ROUTE UPDATED</span></span>
+            <button type="button" class="btn-listen" id="btn-listen-reroute">
+              <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+            </button>
+          </div>
+          <p class="reroute-desc" id="reroute-reason-text" data-i18n="route_updated_sub">
+            A hazard has been detected ahead. A new route has been recommended.
+          </p>
+          <button type="button" class="btn-driver-gmaps" id="btn-reroute-open-gmaps" style="padding: 10px 14px; font-size: 13.5px; min-height: 42px;">
+            <span>🧭</span> <span data-i18n="btn_open_updated_gmaps">Open Updated Route in Google Maps</span>
+          </button>
+        </div>
+
+        <!-- Navigation HUD Top Bar -->
+        <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" id="nav-active-corridor-name">
+              Route: Primary Highway
+            </span>
+            <span class="pill pill-safe" id="nav-speed-pill" style="font-size: 11px;">
+              📍 42 km/h
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font-size: 17px; font-weight: 800; color: var(--navy-dark);" id="nav-dest-name">
+                Shillong, Meghalaya
+              </div>
+              <small style="font-size: 12px; color: var(--text-muted);" id="nav-orig-name">
+                From Guwahati, Assam
+              </small>
+            </div>
+            <div style="text-align: right;">
+              <strong style="font-size: 17px; color: var(--accent); display: block;" id="nav-eta-dist">
+                98 km · 2h 20m
+              </strong>
+              <small style="color: var(--green-text); font-size: 11px; font-weight: 700;">
+                On Schedule
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dominant Map Container with Floating Alert Badge -->
+        <div style="position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); margin-bottom: 12px; box-shadow: var(--shadow-sm);">
+          <!-- Floating Hazard Alert Badge -->
+          <div id="nav-floating-hazard" class="nav-hazard-floating-badge" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 22px;" id="nav-hazard-badge-icon">⚠️</span>
+              <div>
+                <div class="nav-hazard-text" id="nav-hazard-badge-title" data-i18n="floating_hazard_title">ROAD HAZARD REPORTED AHEAD</div>
+                <small style="font-size: 11px; color: var(--text-muted);" id="nav-hazard-badge-sub" data-i18n="floating_hazard_sub">Tap to view details, photo &amp; caution guidance</small>
+              </div>
+            </div>
+            <button type="button" class="nav-hazard-view-btn" id="btn-view-hazard-details" data-i18n="btn_view_hazard">
+              View Details ➔
+            </button>
+          </div>
+
+          <!-- Leaflet Map -->
+          <div id="driver-nav-map" style="height: 380px; width: 100%; background: #e2e8f0;"></div>
+
+          <!-- Bottom map overlays -->
+          <div style="position: absolute; bottom: 12px; left: 12px; z-index: 500; display: flex; gap: 8px;">
+            <button type="button" id="btn-recenter-nav" style="background:#ffffff; border:1px solid var(--line); color:var(--text); padding:7px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; min-height:36px; box-shadow:var(--shadow-sm);" data-i18n="btn_recenter">
+              🎯 Recenter
+            </button>
+            <button type="button" id="btn-quick-report-map" style="background:var(--navy); border:none; color:#ffffff; padding:7px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; min-height:36px; box-shadow:var(--shadow-sm);" data-i18n="btn_quick_report">
+              📸 Quick Report
+            </button>
+            <!-- Testing helper for Rerouting -->
+            <button type="button" id="btn-sim-reroute" title="Simulate road hazard to test reroute" style="background:var(--amber-soft); border:1px solid var(--amber-border); color:var(--amber-text); padding:7px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; min-height:36px;">
+              ⚡ Test Reroute
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Actions -->
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-driver-gmaps" id="btn-nav-reopen-gmaps" style="flex: 2;">
+            <span>🧭</span> <span data-i18n="btn_open_gmaps">Open in Google Maps</span>
+          </button>
+          <button type="button" class="btn-driver-secondary" id="btn-end-navigation" style="flex: 1; border-color: var(--red-border); color: var(--red-text);" data-i18n="btn_end_trip">
+            <span>🏁</span> End Trip
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 3: 1-TAP ROAD CONDITION REPORTER (Exact 8 Categories)
+           =================================================================== -->
+      <section id="view-driver-report" class="driver-view-section">
+        <div style="margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--navy-dark); margin: 0 0 4px 0;" data-i18n="report_view_title">
+            Report Road Condition
+          </h2>
+          <p style="color: var(--text-muted); font-size: 13px;" data-i18n="report_view_sub">
+            Fast reporting, low friction. Tap what you observe and send.
+          </p>
+        </div>
+
+        <!-- EXACT 8 CATEGORIES GRID -->
+        <div class="hazard-report-grid" id="driver-hazard-opts">
+          <div class="hazard-card-opt is-selected" data-cat="flooded">
+            <span class="hazard-card-emoji">🌊</span>
+            <span class="hazard-card-text" data-i18n="cat_flooded">Road flooded</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="damaged">
+            <span class="hazard-card-emoji">🚧</span>
+            <span class="hazard-card-text" data-i18n="cat_damaged">Road damaged</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="accident">
+            <span class="hazard-card-emoji">💥</span>
+            <span class="hazard-card-text" data-i18n="cat_accident">Accident</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="blocked">
+            <span class="hazard-card-emoji">⛔</span>
+            <span class="hazard-card-text" data-i18n="cat_blocked">Road blocked</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="traffic">
+            <span class="hazard-card-emoji">🚗</span>
+            <span class="hazard-card-text" data-i18n="cat_traffic">Heavy traffic</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="visibility">
+            <span class="hazard-card-emoji">🌫️</span>
+            <span class="hazard-card-text" data-i18n="cat_visibility">Poor visibility</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="weather">
+            <span class="hazard-card-emoji">⛈️</span>
+            <span class="hazard-card-text" data-i18n="cat_weather">Weather issue</span>
+          </div>
+          <div class="hazard-card-opt" data-cat="other">
+            <span class="hazard-card-emoji">⚠️</span>
+            <span class="hazard-card-text" data-i18n="cat_other">Other</span>
+          </div>
+        </div>
+
+        <!-- Camera / Photo Attachment -->
+        <label for="driver-camera-input" class="driver-card" style="display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom: 12px; min-height: 48px;">
+          <span style="font-size: 28px;">📷</span>
+          <div style="flex: 1;">
+            <strong style="display: block; font-size: 14px; color: var(--navy-dark);" id="report-photo-label" data-i18n="photo_optional">Take or Upload Photo (Optional)</strong>
+            <small style="color: var(--text-muted); font-size: 12px;" data-i18n="photo_sub">Geotagged road photo for verification</small>
+          </div>
+          <input type="file" accept="image/*" id="driver-camera-input" style="display: none;" />
+        </label>
+        <div id="report-photo-preview-box" style="display: none; margin-bottom: 12px; border-radius: var(--radius); overflow: hidden; max-height: 180px; position: relative;">
+          <img id="report-photo-preview-img" style="width: 100%; height: 180px; object-fit: cover;" alt="Hazard preview" />
+          <button type="button" id="btn-remove-photo" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer;">✕</button>
+        </div>
+
+        <!-- Optional Description Input -->
+        <div style="margin-bottom: 14px;">
+          <input
+            type="text"
+            id="report-optional-note"
+            class="driver-nav-input"
+            data-i18n-ph="note_placeholder"
+            placeholder="Add brief details (optional, e.g. Single lane passable)"
+          />
+        </div>
+
+        <!-- Auto-Attached Metadata Card -->
+        <div class="driver-card" style="background: var(--bg-inset); padding: 12px; font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+          <strong style="color: var(--accent); display: block; margin-bottom: 6px;" data-i18n="auto_attaching">📍 System Automatically Attaching:</strong>
+          <div>• GPS: <span id="report-meta-gps" style="color: var(--text); font-weight: 600;">25.654° N, 91.896° E (Auto-Locked)</span></div>
+          <div>• Driver ID: <span id="report-meta-user" style="color: var(--text); font-weight: 600;">usr-drv-101 (R. Sharma)</span></div>
+          <div>• Device Clock: <span id="report-meta-time" style="color: var(--text); font-weight: 600;">Current timestamp</span></div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" class="btn-driver-primary" id="btn-submit-hazard-report">
+          <span>🚀</span> <span data-i18n="btn_submit_report">Submit Road Report</span>
+        </button>
+        <div id="report-feedback-toast" style="display: none; margin-top: 10px; text-align: center; font-weight: 700; font-size: 13.5px; color: var(--green-text);" data-i18n="report_success_toast">
+          ✅ Road report submitted successfully!
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 4: MY REPORTS (Ownership & Soft-Delete)
+           =================================================================== -->
+      <section id="view-driver-my-reports" class="driver-view-section">
+        <div style="margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--navy-dark); margin: 0 0 4px 0;" data-i18n="my_reports_title">
+            My Submitted Reports
+          </h2>
+          <p style="color: var(--text-muted); font-size: 13px;" data-i18n="my_reports_sub">
+            You can view and delete your submitted road reports. Deleting a report removes it from public routing immediately.
+          </p>
+        </div>
+
+        <!-- My Reports Feed -->
+        <div class="my-reports-list" id="my-reports-container"></div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 5: PROFILE & ACCESSIBILITY SETTINGS
+           =================================================================== -->
+      <section id="view-driver-profile" class="driver-view-section">
+        <div class="driver-card">
+          <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 16px;">
+            <div style="font-size: 36px; background: var(--bg-inset); width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              👨‍✈️
+            </div>
+            <div>
+              <h2 style="margin: 0; font-size: 18px; color: var(--navy-dark);" id="profile-name">R. Sharma</h2>
+              <small style="color: var(--text-muted); font-size: 12px;">ID: usr-drv-101 · Driver Persona</small>
+              <div style="font-size: 12px; color: var(--green-text); font-weight: 700; margin-top: 2px;">⭐ 4.9 Verified Field Reporter</div>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Vehicle Registered:</span>
+              <strong id="profile-veh-code" style="color: var(--text);">AS-01-EB-101 (Tata 407)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Carrier Operator:</span>
+              <span style="color: var(--text); font-weight: 600;">Northeast Essential Logistics (NE8)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Navigation Mode:</span>
+              <span style="color: var(--accent); font-weight: 700;">Self-Directed (Driver Chooses Route)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language & Voice Settings Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <span class="driver-card-title" data-i18n="settings_lang_voice_title">LANGUAGE &amp; VOICE PREFERENCES</span>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label data-i18n="select_language">Language Selection</label>
+            <select id="settings-lang-select" class="driver-nav-input" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+            </select>
+          </div>
+
+          <div>
+            <label data-i18n="settings_voice_test_label">Voice Speech Test</label>
+            <button type="button" class="btn-listen" id="btn-test-voice" style="width:100%; justify-content:center; min-height:44px;">
+              <span>🔊</span> <span data-i18n="settings_voice_test_desc">Test Voice Playback in Selected Language</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Driver Safety & Operational Preferences Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <span class="driver-card-title" data-i18n="settings_safety_title">DRIVER PREFERENCES &amp; SAFETY</span>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label data-i18n="settings_contact_label" style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Driver Contact &amp; Dispatch</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="driver-phone-input" class="driver-nav-input" value="+91 94350 12345" readonly style="background: var(--bg-inset); flex: 1;" />
+              <button type="button" class="btn-driver-secondary" style="font-size: 12px; padding: 0 12px;" onclick="alert('Emergency Hotline 112\nDisaster Management 1070\nLogistics Fleet Dispatch: +91 94350 99999');" data-i18n="settings_emergency_btn">
+                🚨 Emergency Numbers
+              </button>
+            </div>
+            <small style="display: block; color: var(--text-muted); font-size: 11px; margin-top: 4px;">
+              Verified mobile number linked to vehicle permit AS-01-EB-101.
+            </small>
+          </div>
+
+          <div style="margin-bottom: 14px; background: var(--bg-inset); padding: 12px; border-radius: var(--radius-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div>
+                <strong style="font-size: 13px; display: block;" data-i18n="settings_hazard_audio_label">🔊 Floating Hazard Audio</strong>
+                <small style="color: var(--text-muted); font-size: 11px;" data-i18n="settings_hazard_audio_desc">Announce road hazards aloud as you approach</small>
+              </div>
+              <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                <input type="checkbox" id="pref-auto-voice" checked style="opacity: 0; width: 0; height: 0;">
+                <span style="position: absolute; cursor: pointer; inset: 0; background-color: var(--navy-light); border-radius: 24px; transition: .3s;" onclick="this.previousElementSibling.checked = !this.previousElementSibling.checked;"></span>
+              </label>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="font-size: 13px; display: block;" data-i18n="settings_high_contrast_label">🔆 High-Contrast Map Mode</strong>
+                <small style="color: var(--text-muted); font-size: 11px;" data-i18n="settings_high_contrast_desc">Optimized for intense sunlight and mountain fog</small>
+              </div>
+              <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                <input type="checkbox" id="pref-high-contrast" style="opacity: 0; width: 0; height: 0;">
+                <span style="position: absolute; cursor: pointer; inset: 0; background-color: var(--navy-light); border-radius: 24px; transition: .3s;" onclick="this.previousElementSibling.checked = !this.previousElementSibling.checked;"></span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-driver-primary" id="btn-save-settings" style="flex: 1; min-height: 40px; font-size: 13px;">
+              <span>💾</span> <span data-i18n="settings_save_btn">Save Preferences</span>
+            </button>
+            <button type="button" class="btn-driver-secondary" id="btn-clear-cache" style="flex: 1; min-height: 40px; font-size: 13px;">
+              <span>🗑️</span> <span data-i18n="settings_clear_cache_btn">Clear Cache</span>
+            </button>
+          </div>
+          <div id="settings-feedback-toast" style="display: none; margin-top: 8px; text-align: center; font-size: 12px; font-weight: 700; color: var(--green-text);" data-i18n="settings_saved_toast">
+            Preferences saved successfully!
+          </div>
+        </div>
+
+        <!-- Offline Queue Card -->
+        <div class="driver-card">
+          <div class="driver-card-header">
+            <span class="driver-card-title" data-i18n="offline_queue_title">OFFLINE REPORT QUEUE</span>
+            <span class="pill pill-safe" id="profile-sync-pill" data-i18n="offline_synced_pill">SYNCED</span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--text-muted); margin: 0 0 10px 0;" data-i18n="offline_queue_desc">
+            When mountain corridors lose connectivity, your road hazard reports are saved locally on your phone and automatically synchronized once service resumes.
+          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-inset); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px;">
+            <span style="font-size: 13px;" data-i18n="offline_queued_label">Queued Offline Reports:</span>
+            <strong style="font-size: 16px; color: var(--accent);" id="profile-queue-count">0</strong>
+          </div>
+          <button type="button" class="btn-driver-secondary" id="btn-force-sync">
+            <span>🔄</span> <span data-i18n="offline_sync_btn">Check &amp; Synchronize Queue</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Hazard Detail Modal Sheet -->
+      <div id="hazard-detail-modal" class="hazard-modal-overlay" style="display: none;">
+        <div class="hazard-modal-sheet" style="background:#ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span class="pill pill-caution" id="modal-hazard-badge">⚠️ ACTIVE ROAD HAZARD</span>
+            <button type="button" id="btn-close-hazard-modal" style="background: none; border: none; font-size: 20px; color: var(--text); cursor: pointer;">✕</button>
+          </div>
+          <h3 id="modal-hazard-title" style="margin: 0 0 6px 0; font-size: 18px; color: var(--navy-dark);">Landslide &amp; Mudslip</h3>
+          <p id="modal-hazard-desc" style="font-size: 13px; color: var(--text-muted); margin: 0 0 12px 0; line-height: 1.45;">
+            Heavy rain triggered localized mudflow across the northbound shoulder.
+          </p>
+          <div id="modal-hazard-photo-box" style="display: none; margin-bottom: 12px; border-radius: var(--radius-sm); overflow: hidden; max-height: 180px;">
+            <img id="modal-hazard-photo-img" style="width: 100%; height: 180px; object-fit: cover;" alt="Report photo" />
+          </div>
+          <div style="background: var(--bg-inset); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+            <div>• Reported: <strong id="modal-hazard-time" style="color: var(--text);">20m ago</strong></div>
+            <div>• Location: <strong id="modal-hazard-loc" style="color: var(--text);">Barapani, Meghalaya</strong></div>
+            <div>• Advice: <strong style="color: var(--amber-text);">Maintain reduced speed; single-lane crawl</strong></div>
+          </div>
+          <button type="button" class="btn-driver-primary" id="btn-modal-dismiss" data-i18n="btn_modal_dismiss">
+            Got It (Return to Navigation)
+          </button>
+        </div>
+      </div>
+
+      <!-- Floating AI Copilot Trigger Button -->
+      <button type="button" id="btn-open-copilot" class="btn-copilot-floating" aria-label="Ask SafeRoute AI Copilot">
+        <span class="copilot-icon" style="font-size: 16px;">🤖</span>
+        <span class="copilot-label" data-i18n="copilot_label">Driver Copilot</span>
+        <span class="copilot-pulse"></span>
+      </button>
+
+      <!-- Driver AI Copilot Modal -->
+      <div id="driver-copilot-modal" class="hazard-modal-overlay" style="display: none; z-index: 1200;">
+        <div class="hazard-modal-sheet" style="background: #ffffff; max-height: 85vh; display: flex; flex-direction: column; width: 100%; max-width: 480px;">
+          <!-- Copilot Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 24px;">🤖</span>
+              <div>
+                <strong style="font-size: 15px; color: var(--navy-dark); display: block;" data-i18n="copilot_header_title">SafeRoute Copilot</strong>
+                <small style="color: var(--green-text); font-size: 11px; font-weight: 700;" data-i18n="copilot_gemini_active">● Gemini 2.5 Active · Voice Enabled</small>
+              </div>
+            </div>
+            <button type="button" id="btn-close-copilot" style="background: none; border: none; font-size: 22px; color: var(--text); cursor: pointer; padding: 4px 8px;">✕</button>
+          </div>
+
+          <!-- Quick Suggestion Chips -->
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; white-space: nowrap;" id="copilot-quick-chips">
+            <button type="button" class="copilot-chip" data-i18n="copilot_chip_barapani" data-q="Is Barapani Pass open and safe right now?">🛣️ Barapani Pass Status</button>
+            <button type="button" class="copilot-chip" data-i18n="copilot_chip_weather" data-q="How is the weather and rain along NH-6?">🌧️ NH-6 Weather</button>
+            <button type="button" class="copilot-chip" data-i18n="copilot_chip_time" data-q="What is the best time to drive Guwahati to Shillong?">⏰ Best Driving Time</button>
+            <button type="button" class="copilot-chip" data-i18n="copilot_chip_emergency" data-q="What are emergency numbers for roadside help?">🚨 Emergency Help</button>
+          </div>
+
+          <!-- Messages Stream Container -->
+          <div id="copilot-messages" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 2px; min-height: 220px; max-height: 380px;">
+            <div class="copilot-msg copilot-msg-ai">
+              <div class="copilot-msg-content" id="copilot-welcome-text">
+                Hello! I am your SafeRoute logistics copilot. Ask me anything about road conditions, weather warnings, mountain passes, or safe transit timing.
+              </div>
+              <button type="button" class="copilot-listen-btn" style="margin-top: 6px;">
+                <span>🔊</span> <span data-i18n="btn_listen">Listen</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Input Form with Multilingual Microphone Input -->
+          <form id="copilot-form" style="display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; align-items: center;">
+            <button type="button" class="btn-copilot-mic" id="btn-copilot-mic" title="Speak to Copilot (Voice Input)" style="width: 44px; height: 42px; border-radius: 8px; border: 1.5px solid var(--accent); background: var(--accent-soft); color: var(--accent-hover); font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s ease;">
+              🎙️
+            </button>
+            <input type="text" id="copilot-input" class="driver-nav-input" data-i18n-ph="copilot_ph_ask" placeholder="Ask or speak about routes, weather..." style="flex: 1; font-size: 13.5px;" />
+            <button type="submit" class="btn-driver-primary" id="btn-copilot-send" style="padding: 0 16px; min-height: 42px; font-weight: 700; flex-shrink: 0;">
+              <span data-i18n="copilot_btn_send">Send</span>
+            </button>
+          </form>
+          <!-- Microphone Recording Indicator & Feedback Banner -->
+          <div id="copilot-mic-status" style="display: none; font-size: 11.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 10px; margin-top: 6px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dc2626;"></span>
+              <span id="copilot-mic-status-text">Listening... Speak now in your selected language</span>
+            </div>
+            <button type="button" id="btn-copilot-mic-cancel" style="background: none; border: none; color: #dc2626; font-weight: 700; cursor: pointer; font-size: 11px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Dock Navigation -->
+      <nav class="driver-nav-dock">
+        <button type="button" class="driver-dock-btn active" id="dock-route" data-view="view-driver-route">
+          <span class="driver-dock-icon">🧭</span>
+          <span data-i18n="plan_your_route">Route</span>
+        </button>
+        <button type="button" class="driver-dock-btn" id="dock-nav" data-view="view-driver-nav">
+          <span class="driver-dock-icon">🗺️</span>
+          <span data-i18n="nav_live_map">Live Map</span>
+        </button>
+        <button type="button" class="driver-dock-btn" id="dock-report" data-view="view-driver-report">
+          <span class="driver-dock-icon">📸</span>
+          <span data-i18n="report_view_title">Report</span>
+        </button>
+        <button type="button" class="driver-dock-btn" id="dock-my-reports" data-view="view-driver-my-reports">
+          <span class="driver-dock-icon">📋</span>
+          <span data-i18n="my_reports_title">My Reports</span>
+        </button>
+        <button type="button" class="driver-dock-btn" id="dock-profile" data-view="view-driver-profile">
+          <span class="driver-dock-icon">👤</span>
+          <span data-i18n="nav_profile">Profile</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- All-India Logistics Hubs Autocomplete Datalist -->
+    <datalist id="all-india-hubs">
+      <option value="Kerala"></option>
+      <option value="Assam"></option>
+      <option value="Tamil Nadu"></option>
+      <option value="Karnataka"></option>
+      <option value="Andhra Pradesh"></option>
+      <option value="Telangana"></option>
+      <option value="Maharashtra"></option>
+      <option value="Gujarat"></option>
+      <option value="Rajasthan"></option>
+      <option value="West Bengal"></option>
+      <option value="Odisha"></option>
+      <option value="Delhi"></option>
+      <option value="Uttar Pradesh"></option>
+      <option value="Bihar"></option>
+      <option value="Madhya Pradesh"></option>
+      <option value="Punjab"></option>
+      <option value="Haryana"></option>
+      <option value="Kochi, Kerala"></option>
+      <option value="Palakkad, Kerala"></option>
+      <option value="Guwahati, Assam"></option>
+      <option value="Silchar, Assam"></option>
+      <option value="Dibrugarh, Assam"></option>
+      <option value="Nagaon, Assam"></option>
+      <option value="Jorhat, Assam"></option>
+      <option value="Tezpur, Assam"></option>
+      <option value="Shillong, Meghalaya"></option>
+      <option value="Itanagar, Arunachal Pradesh"></option>
+      <option value="Tawang, Arunachal Pradesh"></option>
+      <option value="Dimapur, Nagaland"></option>
+      <option value="Kohima, Nagaland"></option>
+      <option value="Imphal, Manipur"></option>
+      <option value="Aizawl, Mizoram"></option>
+      <option value="Agartala, Tripura"></option>
+      <option value="Gangtok, Sikkim"></option>
+      <option value="Chennai, Tamil Nadu"></option>
+      <option value="Salem, Tamil Nadu"></option>
+      <option value="Coimbatore, Tamil Nadu"></option>
+      <option value="Hosur, Tamil Nadu"></option>
+      <option value="Bengaluru, Karnataka"></option>
+      <option value="Hubballi, Karnataka"></option>
+      <option value="Vijayawada, Andhra Pradesh"></option>
+      <option value="Visakhapatnam, Andhra Pradesh"></option>
+      <option value="Hyderabad, Telangana"></option>
+      <option value="Bhubaneswar, Odisha"></option>
+      <option value="Cuttack, Odisha"></option>
+      <option value="Kolkata, West Bengal"></option>
+      <option value="Kharagpur, West Bengal"></option>
+      <option value="Siliguri, West Bengal"></option>
+      <option value="Dankuni, West Bengal"></option>
+      <option value="Mumbai, Maharashtra"></option>
+      <option value="Pune, Maharashtra"></option>
+      <option value="Nagpur, Maharashtra"></option>
+      <option value="Ahmedabad, Gujarat"></option>
+      <option value="Surat, Gujarat"></option>
+      <option value="Vadodara, Gujarat"></option>
+      <option value="Jaipur, Rajasthan"></option>
+      <option value="Udaipur, Rajasthan"></option>
+      <option value="Delhi, Delhi"></option>
+      <option value="Gurugram, Haryana"></option>
+      <option value="Ludhiana, Punjab"></option>
+      <option value="Chandigarh, Punjab"></option>
+      <option value="Lucknow, Uttar Pradesh"></option>
+      <option value="Kanpur, Uttar Pradesh"></option>
+      <option value="Varanasi, Uttar Pradesh"></option>
+      <option value="Agra, Uttar Pradesh"></option>
+      <option value="Patna, Bihar"></option>
+      <option value="Muzaffarpur, Bihar"></option>
+      <option value="Bhopal, Madhya Pradesh"></option>
+      <option value="Indore, Madhya Pradesh"></option>
+      <option value="Raipur, Chhattisgarh"></option>
+      <option value="Ranchi, Jharkhand"></option>
+      <option value="Jammu, Jammu & Kashmir"></option>
+    </datalist>
+
+    <!-- Leaflet & MapLibre GL Leaflet Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+
+    <!-- Core SafeRoute Services -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/services/data-store.js"></script>
+    <script src="js/services/auth-service.js"></script>
+    <script src="js/services/voice-service.js"></script>
+    <script src="js/services/speech-recognition.js"></script>
+    <script src="js/services/gemini-service.js"></script>
+    <script src="js/services/route-provider.js"></script>
+    <script src="js/services/route-evaluation-service.js"></script>
+    <script src="js/services/ai-explanation-service.js"></script>
+    <script src="js/services/location-service.js"></script>
+    <script src="js/services/report-service.js"></script>
+    <script src="js/services/trip-service.js"></script>
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+
+    <!-- Driver PWA Controller -->
+    <script>
+      (function () {
+        "use strict";
+
+        let navMap = null;
+        let navDriverMarker = null;
+        let navOriginMarker = null;
+        let navDestMarker = null;
+        let navRoutePolyline = null;
+        let navHazardMarkers = [];
+        let activeRouteEvaluation = null;
+        let selectedRoute = null;
+        let selectedReportCategory = "flooded";
+        let attachedReportPhoto = null;
+        let activeNavHazard = null;
+
+        const currentUser = (window.NE8_AUTH && window.NE8_AUTH.getCurrentUser()) || {
+          userId: "usr-drv-101",
+          driverId: "drv-101",
+          name: "R. Sharma",
+          vehicleCode: "AS-01-EB-101",
+        };
+
+        function init() {
+          // 1. Enforce Role Authentication
+          if (window.NE8_AUTH) {
+            const authed = window.NE8_AUTH.requireAuth("driver");
+            if (!authed) return;
+          }
+
+          // 2. Setup Topbar & User Identity
+          setupUserIdentity();
+          setupLogoutButton();
+
+          // 3. Setup Views and Interactions
+          setupBottomDock();
+          setupRouteSearch();
+          setupCorridorChips();
+          setupSecondaryHomeSections();
+          setupTechnicalFactorsAccordion();
+          setupReportSubmission();
+          setupLocationServices();
+          setupGoogleMapsLaunch();
+          setupVoiceControls();
+          setupCopilot();
+          setupSettings();
+          setupEmergencyAlertListener();
+
+          // 4. Initial route evaluation for default corridor
+          runRouteEvaluation("Guwahati, Assam", "Shillong, Meghalaya");
+          renderMyReports();
+
+          // Listen to language changes: dynamically re-evaluate route strings in target language
+          window.addEventListener("saferoute:lang-changed", (e) => {
+            const newLang = e.detail.lang;
+
+            // 1. Re-apply all static DOM data-i18n tags across whole page
+            if (window.I18N && typeof window.I18N.applyTranslations === "function") {
+              window.I18N.applyTranslations(document);
+            }
+
+            // 2. Re-evaluate active route strings and checklist in new language
+            if (activeRouteEvaluation && activeRouteEvaluation.recommendedRoute) {
+              const rec = activeRouteEvaluation.recommendedRoute;
+              const alts = activeRouteEvaluation.alternativeRoutes || [];
+
+              // Localize checklist reasons in new language
+              if (window.NE8_ROUTE_EVAL && typeof window.NE8_ROUTE_EVAL.generateChecklistForRoute === "function") {
+                rec.whyRecommended = window.NE8_ROUTE_EVAL.generateChecklistForRoute(rec, alts, newLang);
+              }
+              // Localize fallback explanation in new language
+              if (window.SafeRouteAI && window.SafeRouteAI.generateGroundedFallbackExplanation) {
+                rec.aiExplanation = window.SafeRouteAI.generateGroundedFallbackExplanation(activeRouteEvaluation, newLang);
+              }
+
+              renderEvaluationResults(activeRouteEvaluation);
+
+              // Pre-warm / preload voice audio in new language for instant playback
+              if (window.NE8_VOICE && typeof window.NE8_VOICE.preloadRouteVoice === "function") {
+                window.NE8_VOICE.preloadRouteVoice(rec);
+              }
+            }
+
+            // 3. Update Copilot welcome text and suggestion chips
+            if (typeof updateCopilotWelcome === "function") {
+              updateCopilotWelcome();
+            }
+            updateCopilotChips(newLang);
+
+            // 5. Update reports and sync settings dropdown
+            renderMyReports();
+            const setLangSel = document.getElementById("settings-lang-select");
+            if (setLangSel) setLangSel.value = newLang;
+
+            // 6. Update SOS Button labels in navigation
+            if (window.SafeRouteSOS_UI && typeof window.SafeRouteSOS_UI.updateSosButtonLabels === "function") {
+              window.SafeRouteSOS_UI.updateSosButtonLabels();
+            }
+          });
+        }
+
+        function setupUserIdentity() {
+          const user = (window.NE8_AUTH && window.NE8_AUTH.getCurrentUser()) || currentUser;
+          const vTag = document.getElementById("driver-vehicle-tag");
+          if (vTag) vTag.textContent = `${user.vehicleCode || "AS-01-EB-101"} · ${user.name || "Driver"}`;
+          const pName = document.getElementById("profile-name");
+          if (pName) pName.textContent = user.name || "R. Sharma";
+          const pVeh = document.getElementById("profile-veh-code");
+          if (pVeh) pVeh.textContent = `${user.vehicleCode || "AS-01-EB-101"} (Tata 407)`;
+          const repUser = document.getElementById("report-meta-user");
+          if (repUser) repUser.textContent = `${user.userId || "usr-drv-101"} (${user.name || "Driver"})`;
+
+          const setLangSel = document.getElementById("settings-lang-select");
+          if (setLangSel && window.I18N) {
+            setLangSel.value = window.I18N.getLanguage();
+          }
+        }
+
+        function setupLogoutButton() {
+          const btnLogout = document.getElementById("btn-driver-logout");
+          if (btnLogout && window.NE8_AUTH) {
+            btnLogout.addEventListener("click", () => {
+              window.NE8_AUTH.logout();
+            });
+          }
+        }
+        function setupBottomDock() {
+          const dockBtns = document.querySelectorAll(".driver-dock-btn");
+          const views = document.querySelectorAll(".driver-view-section");
+
+          dockBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const targetViewId = btn.dataset.view;
+              dockBtns.forEach((b) => b.classList.remove("active"));
+              views.forEach((v) => v.classList.remove("active"));
+
+              btn.classList.add("active");
+              const targetView = document.getElementById(targetViewId);
+              if (targetView) targetView.classList.add("active");
+
+              if (targetViewId === "view-driver-nav") {
+                initOrResizeNavMap();
+              } else if (targetViewId === "view-driver-my-reports") {
+                renderMyReports();
+              }
+            });
+          });
+        }
+
+        function setupRouteSearch() {
+          const btnFind = document.getElementById("btn-find-routes");
+          const inputOrig = document.getElementById("input-origin");
+          const inputDest = document.getElementById("input-destination");
+          const btnGps = document.getElementById("btn-use-gps");
+
+          btnFind.addEventListener("click", () => {
+            const orig = inputOrig.value.trim();
+            const dest = inputDest.value.trim();
+            if (!orig || !dest) {
+              alert("Please enter both origin and destination.");
+              return;
+            }
+            runRouteEvaluation(orig, dest);
+          });
+
+          btnGps.addEventListener("click", async () => {
+            btnGps.textContent = "📍 Acquiring...";
+            if (window.NE8_LOCATION) {
+              try {
+                const loc = await window.NE8_LOCATION.requestCurrentPosition();
+                inputOrig.value = `Current Location (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`;
+              } catch (e) {
+                inputOrig.value = "Guwahati, Assam";
+              } finally {
+                btnGps.textContent = window.I18N ? window.I18N.t("btn_use_gps") : "📍 Use Current GPS";
+              }
+            }
+          });
+        }
+
+        function setupCorridorChips() {
+          const chips = document.querySelectorAll(".corridor-chip");
+          chips.forEach((chip) => {
+            chip.addEventListener("click", () => {
+              document.getElementById("input-origin").value = chip.dataset.orig;
+              document.getElementById("input-destination").value = chip.dataset.dest;
+              runRouteEvaluation(chip.dataset.orig, chip.dataset.dest);
+            });
+          });
+        }
+
+        function setupSecondaryHomeSections() {
+          document.querySelectorAll(".recent-journey-item").forEach((item) => {
+            item.addEventListener("click", () => {
+              document.getElementById("input-origin").value = item.dataset.orig;
+              document.getElementById("input-destination").value = item.dataset.dest;
+              runRouteEvaluation(item.dataset.orig, item.dataset.dest);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+          });
+
+          document.querySelectorAll(".btn-saved-place").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              document.getElementById("input-destination").value = btn.dataset.place;
+              const orig = document.getElementById("input-origin").value.trim() || "Guwahati, Assam";
+              runRouteEvaluation(orig, btn.dataset.place);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+          });
+        }
+
+        function setupTechnicalFactorsAccordion() {
+          const btnToggle = document.getElementById("btn-toggle-tech-details");
+          const content = document.getElementById("tech-details-content");
+          const arrow = document.getElementById("tech-details-arrow");
+          if (btnToggle && content) {
+            btnToggle.addEventListener("click", () => {
+              const isOpen = content.style.display === "block";
+              content.style.display = isOpen ? "none" : "block";
+              if (arrow) arrow.textContent = isOpen ? "▼" : "▲";
+            });
+          }
+        }
+
+        async function runRouteEvaluation(originQuery, destQuery) {
+          if (!window.NE8_ROUTE_EVAL) return;
+
+          const resultsArea = document.getElementById("route-results-area");
+          resultsArea.style.display = "block";
+
+          const btnFind = document.getElementById("btn-find-routes");
+          btnFind.disabled = true;
+          btnFind.innerHTML = `<span>⏳</span> <span>${window.I18N ? window.I18N.t("evaluating_routes") : "Evaluating Routes..."}</span>`;
+
+          try {
+            const evalResult = await window.NE8_ROUTE_EVAL.findAndEvaluateRoutes(originQuery, destQuery);
+            activeRouteEvaluation = evalResult;
+            selectedRoute = evalResult.recommendedRoute;
+
+            renderEvaluationResults(evalResult);
+          } catch (err) {
+            console.error("Evaluation error:", err);
+          } finally {
+            btnFind.disabled = false;
+            btnFind.innerHTML = `<span>🔍</span> <span>${window.I18N ? window.I18N.t("btn_find_route") : "Find Best Route"}</span>`;
+          }
+        }
+
+        function renderEvaluationResults(evalResult) {
+          const rec = evalResult.recommendedRoute;
+          const alts = evalResult.alternativeRoutes || [];
+
+          // Recommended Route Card
+          document.getElementById("rec-route-title").textContent = rec.name;
+          const estLabel = window.I18N ? window.I18N.t("estimated_transit") : "estimated transit";
+          document.getElementById("rec-route-meta").textContent = `${rec.distanceKm} km · ${rec.durationStr} ${estLabel}`;
+
+          const checklistEl = document.getElementById("rec-route-checklist");
+          checklistEl.innerHTML = (rec.whyRecommended || [])
+            .map((item) => `<li class="why-route-item">${item}</li>`)
+            .join("");
+
+          // Render AI route summary and badge
+          const aiSummaryEl = document.getElementById("rec-route-ai-summary");
+          const aiBadgeEl = document.getElementById("why-ai-badge");
+          if (rec.aiExplanation) {
+            if (aiSummaryEl) {
+              aiSummaryEl.textContent = rec.aiExplanation;
+              aiSummaryEl.style.display = "block";
+            }
+            if (aiBadgeEl) {
+              const isGemini = rec.aiModelUsed && rec.aiModelUsed.toLowerCase().includes("gemini");
+              aiBadgeEl.textContent = isGemini
+                ? (window.I18N ? window.I18N.t("gemini_ai_badge") : "Gemini 2.5 Flash")
+                : (window.I18N ? window.I18N.t("grounded_rule_badge") : "Evidence Evaluated");
+              aiBadgeEl.className = isGemini ? "pill pill-safe" : "pill pill-neutral";
+            }
+          } else {
+            if (aiSummaryEl) aiSummaryEl.style.display = "none";
+            if (aiBadgeEl) {
+              aiBadgeEl.textContent = window.I18N ? window.I18N.t("grounded_rule_badge") : "Evidence Evaluated";
+              aiBadgeEl.className = "pill pill-neutral";
+            }
+          }
+
+          // Populate Technical Factors Accordion with localized strings
+          if (rec.factors) {
+            const tLow = window.I18N ? window.I18N.t("tech_risk_low") : "Low";
+            const tMod = window.I18N ? window.I18N.t("tech_risk_moderate") : "Moderate";
+            const tHigh = window.I18N ? window.I18N.t("tech_risk_high") : "High";
+            const tLight = window.I18N ? window.I18N.t("tech_traffic_light") : "Light";
+            const tConf = window.I18N ? window.I18N.t("tech_confidence_high") : "High (92%)";
+            const tFresh = window.I18N ? window.I18N.t("tech_freshness_val") : "Updated within 30m";
+
+            const elWeather = document.getElementById("tech-weather-risk");
+            if (elWeather) elWeather.textContent = rec.factors.weatherRisk === "High" ? tHigh : (rec.factors.weatherRisk === "Moderate" ? tMod : tLow);
+            const elRoad = document.getElementById("tech-road-risk");
+            if (elRoad) elRoad.textContent = rec.factors.roadConditionRisk === "High" ? tHigh : (rec.factors.roadConditionRisk === "Moderate" ? tMod : tLow);
+            const elTraffic = document.getElementById("tech-traffic");
+            if (elTraffic) elTraffic.textContent = rec.factors.trafficRisk === "Moderate" ? tMod : tLight;
+            const elConf = document.getElementById("tech-confidence");
+            if (elConf) elConf.textContent = tConf;
+            const elFresh = document.getElementById("tech-freshness");
+            if (elFresh) elFresh.textContent = tFresh;
+          }
+
+          // Alternative Routes Container
+          const altContainer = document.getElementById("alt-routes-list");
+          altContainer.innerHTML = "";
+          const selPrefix = window.I18N ? window.I18N.t("select_alt_route_prefix") : "Select Route";
+
+          alts.forEach((alt, idx) => {
+            const concern = alt.concern || "Slightly longer transit duration.";
+            const altCard = document.createElement("div");
+            altCard.className = "alt-route-card";
+            altCard.innerHTML = `
+              <div class="alt-route-header">
+                <span class="alt-route-name">${alt.name}</span>
+                <span class="alt-route-meta">${alt.distanceKm} km · ${alt.durationStr}</span>
+              </div>
+              <div class="alt-route-concern">
+                ⚠️ ${concern}
+              </div>
+              <button type="button" class="btn-driver-secondary" style="font-size: 13px; padding: 10px 14px;">
+                <span>🗺️</span> <span>${selPrefix} ${String.fromCharCode(66 + idx)}</span>
+              </button>
+            `;
+            altCard.querySelector("button").addEventListener("click", () => {
+              selectedRoute = alt;
+              startNavigationSession(alt, evalResult);
+            });
+            altContainer.appendChild(altCard);
+          });
+        }
+
+        function updateCopilotChips(lang) {
+          const chips = document.querySelectorAll(".copilot-chip");
+          if (!chips || !chips.length || !window.I18N) return;
+          const chipKeys = ["copilot_chip_barapani", "copilot_chip_weather", "copilot_chip_time", "copilot_chip_emergency"];
+          chips.forEach((chip, i) => {
+            if (chipKeys[i]) {
+              chip.textContent = window.I18N.t(chipKeys[i]);
+            }
+          });
+        }
+
+        // -------------------------------------------------------------
+        // GOOGLE MAPS NAVIGATION LAUNCH & COMPANION MONITORING
+        // -------------------------------------------------------------
+        function setupGoogleMapsLaunch() {
+          // Launch Google Maps navigation
+          document.getElementById("btn-launch-gmaps").addEventListener("click", () => {
+            if (!activeRouteEvaluation) return;
+            openGoogleMapsNavigation(
+              activeRouteEvaluation.origin.name,
+              activeRouteEvaluation.destination.name
+            );
+          });
+
+          // Companion In-App HUD monitoring
+          document.getElementById("btn-start-nav-companion").addEventListener("click", () => {
+            if (!selectedRoute || !activeRouteEvaluation) return;
+            startNavigationSession(selectedRoute, activeRouteEvaluation);
+          });
+
+          // Inside Navigation HUD
+          document.getElementById("btn-nav-reopen-gmaps").addEventListener("click", () => {
+            if (!activeRouteEvaluation) return;
+            openGoogleMapsNavigation(
+              activeRouteEvaluation.origin.name,
+              activeRouteEvaluation.destination.name
+            );
+          });
+        }
+
+        function openGoogleMapsNavigation(originQuery, destinationQuery) {
+          const orig = encodeURIComponent(originQuery);
+          const dest = encodeURIComponent(destinationQuery);
+          // Official Google Maps Universal Directions URL
+          const url = `https://www.google.com/maps/dir/?api=1&origin=${orig}&destination=${dest}&travelmode=driving`;
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+
+        function startNavigationSession(route, evalResult) {
+          selectedRoute = route;
+          document.getElementById("nav-active-corridor-name").textContent = `Route: ${route.name}`;
+          document.getElementById("nav-orig-name").textContent = `From ${evalResult.origin.name}`;
+          document.getElementById("nav-dest-name").textContent = evalResult.destination.name;
+          document.getElementById("nav-eta-dist").textContent = `${route.distanceKm} km · ${route.durationStr}`;
+
+          document.getElementById("dock-nav").click();
+          initOrResizeNavMap();
+        }
+
+        // -------------------------------------------------------------
+        // DRIVER VOICE / LISTEN ACCESSIBILITY
+        // -------------------------------------------------------------
+                function setupCopilot() {
+          const btnOpen = document.getElementById("btn-open-copilot");
+          const btnClose = document.getElementById("btn-close-copilot");
+          const modal = document.getElementById("driver-copilot-modal");
+          const form = document.getElementById("copilot-form");
+          const input = document.getElementById("copilot-input");
+          const messages = document.getElementById("copilot-messages");
+          const chips = document.querySelectorAll(".copilot-chip");
+
+          if (!modal) return;
+
+          function openModal() {
+            modal.style.display = "flex";
+            if (input) input.focus();
+            updateCopilotWelcome();
+          }
+
+          function closeModal() {
+            modal.style.display = "none";
+          }
+
+          if (btnOpen) btnOpen.addEventListener("click", openModal);
+          if (btnClose) btnClose.addEventListener("click", closeModal);
+          modal.addEventListener("click", (e) => {
+            if (e.target === modal) closeModal();
+          });
+
+          chips.forEach((chip) => {
+            chip.addEventListener("click", () => {
+              if (input) {
+                input.value = chip.dataset.q;
+                handleSendMessage(chip.dataset.q);
+              }
+            });
+          });
+
+          if (form) {
+            form.addEventListener("submit", (e) => {
+              e.preventDefault();
+              const q = input.value.trim();
+              if (q) handleSendMessage(q);
+            });
+          }
+
+          // Multilingual Microphone / Speech-to-Text Controller
+          const btnMic = document.getElementById("btn-copilot-mic");
+          const micStatus = document.getElementById("copilot-mic-status");
+          const micStatusText = document.getElementById("copilot-mic-status-text");
+          const btnMicCancel = document.getElementById("btn-copilot-mic-cancel");
+
+          function setMicUiState(isRec, msg) {
+            if (!btnMic) return;
+            if (isRec) {
+              btnMic.style.background = "#fee2e2";
+              btnMic.style.borderColor = "#ef4444";
+              btnMic.style.color = "#dc2626";
+              btnMic.innerHTML = "⏹️";
+              if (micStatus) {
+                micStatus.style.display = "flex";
+                if (micStatusText && msg) micStatusText.textContent = msg;
+              }
+            } else {
+              btnMic.style.background = "var(--accent-soft)";
+              btnMic.style.borderColor = "var(--accent)";
+              btnMic.style.color = "var(--accent-hover)";
+              btnMic.innerHTML = "🎙️";
+              if (micStatus) micStatus.style.display = "none";
+            }
+          }
+
+          if (btnMic) {
+            btnMic.addEventListener("click", () => {
+              if (window.SafeRouteSpeech && window.SafeRouteSpeech.isListening()) {
+                window.SafeRouteSpeech.stopListening();
+                setMicUiState(false);
+                return;
+              }
+
+              if (!window.SafeRouteSpeech || !window.SafeRouteSpeech.isSupported()) {
+                alert("Speech recognition is not supported on this browser. Please use Chrome or Edge for voice input, or type your question.");
+                return;
+              }
+
+              const curLang = window.I18N ? window.I18N.getLanguage() : "en";
+              const langLabels = {
+                en: "English", ta: "Tamil (தமிழ்)", hi: "Hindi (हिन्दी)", bn: "Bengali (বাংলা)",
+                as: "Assamese (অসমীয়া)", ne: "Nepali (नेपाली)", meitei: "Meitei", khasi: "Khasi",
+                mizo: "Mizo", nishi: "Nyishi", konyak: "Konyak"
+              };
+              const langLabel = langLabels[curLang] || curLang;
+
+              window.SafeRouteSpeech.startListening({
+                lang: curLang,
+                onStart: () => {
+                  setMicUiState(true, `Listening... Speak in ${langLabel}`);
+                },
+                onInterim: (interim) => {
+                  if (input) input.value = interim;
+                },
+                onFinal: (final) => {
+                  if (input) input.value = final;
+                  setMicUiState(false);
+                  setTimeout(() => {
+                    if (input && input.value.trim()) {
+                      handleSendMessage(input.value.trim());
+                    }
+                  }, 400);
+                },
+                onEnd: () => {
+                  setMicUiState(false);
+                },
+                onError: (code, userMsg) => {
+                  setMicUiState(false);
+                  alert(userMsg);
+                }
+              });
+            });
+          }
+
+          if (btnMicCancel) {
+            btnMicCancel.addEventListener("click", () => {
+              if (window.SafeRouteSpeech) {
+                window.SafeRouteSpeech.cancelListening();
+              }
+              setMicUiState(false);
+              if (input) input.value = "";
+            });
+          }
+
+          function updateCopilotWelcome() {
+            const lang = window.I18N ? window.I18N.getLanguage() : "en";
+            const welcomeEl = document.getElementById("copilot-welcome-text");
+            if (!welcomeEl) return;
+
+            const welcomeTexts = {
+              en: "Hello! I am your SafeRoute logistics copilot. Ask me anything about road conditions, weather warnings, mountain passes, or safe transit timing.",
+              ta: "வணக்கம்! நான் உங்கள் SafeRoute வழிகாட்டி. சாலை நிலைமை, வானிலை எச்சரிக்கை, மலைப்பாதைகள் பற்றி என்னிடம் கேளுங்கள்.",
+              hi: "नमस्ते! मैं आपका SafeRoute सह-चालक हूँ। सड़क की स्थिति, मौसम की चेतावनी या पहाड़ी मार्गों के बारे में कुछ भी पूछें।",
+              bn: "নমস্কার! আমি আপনার SafeRoute কো-পাইলট। সড়কের অবস্থা, আবহাওয়া সতর্কতা বা পাহাড়ি পথ সম্পর্কে আমাকে জিজ্ঞাসা করুন।",
+              as: "নমস্কাৰ! মই আপোনাৰ SafeRoute সহায়ক। পথৰ অৱস্থা, বতৰৰ সতৰ্কবাৰ্তা বা পাহাৰীয়া পথৰ বিষয়ে সুধিব পাৰে।",
+              ne: "नमस्ते! म तपाईंको SafeRoute सह-चालक हुँ। सडकको अवस्था, मौसम चेतावनी वा पहाडी मार्गबारे जे पनि सोध्न सक्नुहुन्छ।",
+              khasi: "Khublei! Nga dei u SafeRoute Copilot jong phi. Kylli shaphang ka surok, suin-bneng lane ki lum.",
+              mizo: "Chibai! SafeRoute Copilot ka ni e. Kawng dinhmun, khawchin leh tlangram kawng chungchang min zawt rawh le.",
+              meitei: "খোৰুমজরি! ঐহাক SafeRoute Copilot নি। লম্বীগী ফিভম, নুংশিৎ-ঈশিং অমসুং চিংগী লম্বীগী মতাংদা ৱাহং হংবীয়ু।",
+              nishi: "Hello! SafeRoute copilot dung. Lodu, dolo aru mountain pass bita hoka kylli do.",
+              konyak: "Hello! SafeRoute copilot o. Lam, yam-ong aru hazard hoka kylli.",
+            };
+            welcomeEl.textContent = welcomeTexts[lang] || welcomeTexts.en;
+
+            // Bind welcome listen button
+            const firstListen = messages.querySelector(".copilot-listen-btn");
+            if (firstListen) {
+              firstListen.onclick = () => {
+                window.NE8_VOICE.speak(welcomeEl.textContent, { buttonElement: firstListen, lang });
+              };
+            }
+          }
+
+          async function handleSendMessage(text) {
+            if (!text.trim()) return;
+            if (input) input.value = "";
+
+            // 1. Append Driver User Bubble
+            const userBubble = document.createElement("div");
+            userBubble.className = "copilot-msg copilot-msg-user";
+            userBubble.textContent = text;
+            messages.appendChild(userBubble);
+            messages.scrollTop = messages.scrollHeight;
+
+            // 2. Append Typing Placeholder
+            const typingBubble = document.createElement("div");
+            typingBubble.className = "copilot-msg copilot-msg-ai";
+            typingBubble.innerHTML = `<span>⏳ <em>Thinking...</em></span>`;
+            messages.appendChild(typingBubble);
+            messages.scrollTop = messages.scrollHeight;
+
+            const lang = window.I18N ? window.I18N.getLanguage() : "en";
+            const context = {
+              route: activeRouteEvaluation && activeRouteEvaluation.recommendedRoute ? activeRouteEvaluation.recommendedRoute.name : "Guwahati - Shillong Highway (NH-6)",
+              weather: activeRouteEvaluation && activeRouteEvaluation.recommendedRoute ? activeRouteEvaluation.recommendedRoute.conditions.weather : "Moderate",
+              location: "Guwahati, Assam",
+            };
+
+            let replyText = "";
+            try {
+              const res = await fetch("/api/ai/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text, language: lang, context }),
+              });
+
+              if (res.ok) {
+                const data = await res.json();
+                replyText = data.reply || "";
+              }
+            } catch (err) {
+              console.warn("Backend chat failed, using local domain copilot:", err);
+            }
+
+            if (!replyText) {
+              // Local fallback if offline
+              replyText = generateLocalCopilotAnswer(text, lang);
+            }
+
+            // 3. Update Typing Bubble with Real Answer
+            typingBubble.innerHTML = `
+              <div class="copilot-msg-content">${replyText}</div>
+              <button type="button" class="copilot-listen-btn" style="margin-top: 6px;">
+                <span>🔊</span> <span>Listen</span>
+              </button>
+            `;
+            messages.scrollTop = messages.scrollHeight;
+
+            // Bind Listen button on response
+            const btnListen = typingBubble.querySelector(".copilot-listen-btn");
+            if (btnListen) {
+              btnListen.onclick = () => {
+                if (window.NE8_VOICE.isSpeaking()) {
+                  window.NE8_VOICE.stop();
+                } else {
+                  window.NE8_VOICE.speak(replyText, { buttonElement: btnListen, lang });
+                }
+              };
+            }
+          }
+
+          function generateLocalCopilotAnswer(text, lang) {
+            const q = text.toLowerCase();
+            if (q.includes("barapani") || q.includes("nh-6") || q.includes("nh6") || q.includes("sonapur")) {
+              if (lang === "ta") return "பாரபானி கணவாய் (NH-6) தற்போது திறக்கப்பட்டுள்ளது. மழையின் போது வேகம் குறைத்து இடது பக்கமாக செல்லவும். அவசர உதவிக்கு 112 அழைக்கவும்.";
+              if (lang === "hi") return "बारापानी दर्रा (NH-6) खुला है। बारिश और कोहरे के दौरान गति धीमी रखें और सतर्कता बरतें। आपातकाल में 112 डायल करें।";
+              if (lang === "bn") return "বারাপানি পাস (NH-6) বর্তমানে চালু রয়েছে। বৃষ্টির সময় সাবধানে গাড়ি চালান। জরুরি সাহায্যের জন্য ১১২ ডায়াল করুন।";
+              if (lang === "as") return "বৰাপানী ঘাট (NH-6) বৰ্তমান খোলা আছে। বৰষুণৰ সময়ত সাৱধানে গাড়ী চলাওক। জৰুৰীকালীন সহায়ৰ বাবে ১১২ ত ফোন কৰক।";
+              if (lang === "ne") return "बारापानी पास (NH-6) खुला छ। वर्षा र कुहिरोमा गति नियन्त्रण गर्नुहोस्। आपतकालमा ११२ मा सम्पर्क गर्नुहोस्।";
+              if (lang === "khasi") return "Ka Barapani Pass (NH-6) ka plie mynta. Niah suki haba slap. Haba don jingeh phone 112.";
+              if (lang === "mizo") return "Barapani Pass (NH-6) a tlang theih e. Ruah sur lai chuan fimkhur takin tlan rawh. Emergency atan 112 call rawh.";
+              if (lang === "meitei") return "বারাপানি পাছ (NH-6) হৌজিক হাংলি। নোং চুরাইবা মতমদা খোঙজেল তপ্না চৎলু। ইমার্জেন্সীগীদমক ১১২ দা কোল তৌবীয়ু।";
+              if (lang === "nishi") return "Barapani pass (NH-6) open dung. Rainfall time lo speed reduce do. Emergency number 112 call do.";
+              if (lang === "konyak") return "Barapani pass (NH-6) open o. Ruah time no speed suta niah. Emergency 112 call o.";
+              return "Barapani Pass (NH-6) is open with single-lane cautions active during rainfall. SafeRoute recommends reducing speed. For roadside emergency, call 112.";
+            }
+
+            if (lang === "ta") return "SafeRoute வழிகாட்டி: பாதை நிலைமை மற்றும் வானிலை தொடர்ந்து கண்காணிக்கப்படுகிறது. ஏதேனும் ஆபத்து இருப்பின் உடனுக்குடன் அறிவிக்கப்படும்.";
+            if (lang === "hi") return "SafeRoute सह-चालक: मार्ग की स्थिति सामान्य है। किसी भी मौसम या सड़क अवरोध पर SafeRoute आपको समय पर चेतावनी देगा।";
+            if (lang === "bn") return "SafeRoute কো-পাইলট: পথের পরিস্থিতি পর্যবেক্ষণে রাখা হয়েছে। কোনো বিপদ দেখা দিলে অবিলম্বে সতর্ক করা হবে।";
+            if (lang === "as") return "SafeRoute চালক সহায়ক: পথৰ পৰিস্থিতি নিৰীক্ষণ কৰা হৈছে। কোনো বাধা থাকিলে তৎক্ষণাত সতৰ্ক কৰা হ'ব।";
+            if (lang === "ne") return "SafeRoute सह-चालक: सडक अवस्था सामान्य छ। कुनै अवरोध आएमा SafeRoute ले अलर्ट जारी गर्नेछ।";
+            if (lang === "khasi") return "SafeRoute Copilot: Ka surok ka long kaba biang mynta. Niah da kaba phikir bad bud ia ki dak surok.";
+            if (lang === "mizo") return "SafeRoute Copilot: Kawng dinhmun thlithlai mek a ni e. Fimkhur takin tlan la, hriattirna ngaihven rawh.";
+            if (lang === "meitei") return "SafeRoute Copilot: লম্বীগী ফিভম য়েংশিল্লি। খুদোংথিবা লৈরকপদা নোটিস পীরগনি।";
+            if (lang === "nishi") return "SafeRoute Copilot: Lodu telemetry active dung. Bita gari niah do.";
+            if (lang === "konyak") return "SafeRoute Copilot: Lam telemetry bita dung. Suta niah o.";
+
+            return "SafeRoute Copilot: Live route and weather monitoring active. Drive cautiously and follow posted highway limits.";
+          }
+        }
+
+        function setupVoiceControls() {
+          if (!window.NE8_VOICE) return;
+
+          // 1. Home header listen (Speaks localized summary)
+          const btnHome = document.getElementById("btn-listen-home");
+          if (btnHome) {
+            btnHome.addEventListener("click", () => {
+              if (window.NE8_VOICE.isSpeaking()) {
+                window.NE8_VOICE.stop();
+              } else {
+                const lang = window.I18N ? window.I18N.getLanguage() : "en";
+                const introTexts = {
+                  en: "SafeRoute evaluates live road and mountain weather to recommend the best route. Enter your destination to start.",
+                  ta: "SafeRoute சாலை மற்றும் வானிலை தகவல்களை மதிப்பிட்டு சிறந்த வழியை பரிந்துரைக்கிறது. தொடங்க உங்கள் சேருமிடத்தை உள்ளிடவும்.",
+                  hi: "SafeRoute वास्तविक सड़क और मौसम परिस्थितियों का मूल्यांकन कर सर्वोत्तम मार्ग सुझाता है। शुरू करने के लिए अपना गंतव्य दर्ज करें।",
+                  bn: "SafeRoute রিয়েল-টাইম সড়ক ও আবহাওয়া মূল্যায়ন করে সেরা পথ সুপারিশ করে। শুরু করতে গন্তব্য লিখুন।",
+                  as: "SafeRoute এ প্ৰকৃত পথ আৰু বতৰ পৰীক্ষা কৰি শ্ৰেষ্ঠ পথ অনুমোদন কৰে। যাত্ৰা আৰম্ভ কৰিবলৈ গন্তব্যস্থান দিয়ক।",
+                  ne: "SafeRoute ले वास्तविक सडक र मौसम अवस्थाको मूल्याङ्कन गरी उत्तम रुट सिफारিস गर्छ। सुरु गर्न आफ्नो गन्तव्य लेख्नुहोस्।",
+                  khasi: "SafeRoute ka bishar ia ka surok bad suin-bneng ban ai lynti babha. Thep ia ka jaka poi ban sdang.",
+                  mizo: "SafeRoute hian khawchin leh kawng dinhmun thlirin kawng tha ber a kawhhmuh ang che.",
+                  meitei: "SafeRoute না লম্বী অমসুং নুংশিৎ-ঈশিং য়েংদুনা খ্বাইদগী ফবা লম্বী তাকই। য়ৌগদবা মফম হাপ্পীয়ু।",
+                  nishi: "SafeRoute dolo aru lodu khein bita lodu pacha do. Yau jaka thep.",
+                  konyak: "SafeRoute lam aru yam-ong khein bita lam pa-i. Thlenna thep.",
+                };
+                const text = introTexts[lang] || introTexts.en;
+                window.NE8_VOICE.speak(text, { buttonElement: btnHome, lang });
+              }
+            });
+          }
+
+          // 2. Mountain Alerts listen (Speaks localized alert)
+          const btnAlerts = document.getElementById("btn-listen-alerts");
+          if (btnAlerts) {
+            btnAlerts.addEventListener("click", () => {
+              if (window.NE8_VOICE.isSpeaking()) {
+                window.NE8_VOICE.stop();
+              } else {
+                const lang = window.I18N ? window.I18N.getLanguage() : "en";
+                const alertObj = {
+                  title: "Barapani & Cherrapunji",
+                  description: "Single lane crawl during rain, ridge mist below 90m"
+                };
+                const speech = window.NE8_VOICE.buildSpokenAlertSummary(alertObj);
+                window.NE8_VOICE.speak(speech, { buttonElement: btnAlerts, lang });
+              }
+            });
+          }
+
+          // 3. Recommended Route summary listen (Speaks localized route summary)
+          const btnRec = document.getElementById("btn-listen-rec-route");
+          if (btnRec) {
+            btnRec.addEventListener("click", () => {
+              if (window.NE8_VOICE.isSpeaking()) {
+                window.NE8_VOICE.stop();
+              } else if (selectedRoute) {
+                const lang = window.I18N ? window.I18N.getLanguage() : "en";
+                const speech = window.NE8_VOICE.buildSpokenRouteSummary(selectedRoute);
+                window.NE8_VOICE.speak(speech, { buttonElement: btnRec, lang });
+              }
+            });
+          }
+
+          // 4. "Why this route?" checklist listen (Speaks localized checklist)
+          const btnWhy = document.getElementById("btn-listen-why");
+          if (btnWhy) {
+            btnWhy.addEventListener("click", () => {
+              if (window.NE8_VOICE.isSpeaking()) {
+                window.NE8_VOICE.stop();
+              } else if (selectedRoute) {
+                const lang = window.I18N ? window.I18N.getLanguage() : "en";
+                let speech = "";
+                if (selectedRoute.whyRecommended && selectedRoute.whyRecommended.length) {
+                  speech = selectedRoute.whyRecommended.join(". ");
+                } else if (selectedRoute.aiExplanation) {
+                  speech = selectedRoute.aiExplanation;
+                } else {
+                  speech = window.NE8_VOICE.buildSpokenRouteSummary(selectedRoute);
+                }
+                window.NE8_VOICE.speak(speech, { buttonElement: btnWhy, lang });
+              }
+            });
+          }
+
+          // 5. Test Voice in Settings
+          const btnTestVoice = document.getElementById("btn-test-voice");
+          if (btnTestVoice) {
+            btnTestVoice.addEventListener("click", () => {
+              const lang = window.I18N ? window.I18N.getLanguage() : "en";
+              let testText = "Voice playback is active and working clearly on SafeRoute.";
+              if (lang === "ta") testText = "SafeRoute குரல் வழிகாட்டி வெற்றிகரமாக செயல்படுகிறது.";
+              if (lang === "hi") testText = "SafeRoute वॉयस प्लेबैक सही तरीके से काम कर रहा है।";
+              if (lang === "bn") testText = "SafeRoute ভয়েস প্লেব্যাক সক্রিয় এবং সঠিকভাবে কাজ করছে।";
+              if (lang === "as") testText = "SafeRoute ভইচ প্লেবেক সক্ৰিয় আৰু সঠিকভাৱে কাম কৰিছে।";
+              if (lang === "ne") testText = "SafeRoute आवाज प्लेब्याक सक्रिय छ र सही रूपमा काम गरिरहेको छ।";
+              if (lang === "khasi") testText = "Ka jingkren SafeRoute ka treikam bha ha kane ka kor.";
+              if (lang === "mizo") testText = "SafeRoute aw hman theih a ni a, tha takin a thawk e.";
+              if (lang === "meitei") testText = "SafeRoute খোন্থাং প্লেবেক চত্থরে অমসুং অচুম্বা ফিভমদা লৈরে।";
+              if (lang === "nishi") testText = "SafeRoute voice test chenam bita dung.";
+              if (lang === "konyak") testText = "SafeRoute kah fiah-i a-len o.";
+              window.NE8_VOICE.speak(testText, { buttonElement: btnTestVoice, lang });
+            });
+          }
+        }
+
+        // -------------------------------------------------------------
+        // NAVIGATION MAP & FUNCTIONAL REROUTING
+        // -------------------------------------------------------------
+        function initOrResizeNavMap() {
+          const mapEl = document.getElementById("driver-nav-map");
+          if (!mapEl || typeof L === "undefined") return;
+
+          if (!navMap) {
+            navMap = L.map("driver-nav-map", {
+              zoomControl: false,
+              attributionControl: true,
+            }).setView([25.654, 91.896], 11);
+
+            if (window.SafeRouteMap && window.SafeRouteMap.createTileLayer) {
+              window.SafeRouteMap.createTileLayer().addTo(navMap);
+              window.SafeRouteMap.attachTileErrorBanner(navMap, "driver-nav-map");
+            } else {
+              L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+                attribution: '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+                crossOrigin: true,
+              }).addTo(navMap);
+            }
+
+            L.control.zoom({ position: "topright" }).addTo(navMap);
+
+            // Responsive map resizing
+            window.addEventListener("resize", () => {
+              if (navMap) navMap.invalidateSize();
+            });
+            if (window.screen && window.screen.orientation) {
+              window.screen.orientation.addEventListener("change", () => {
+                if (navMap) setTimeout(() => navMap.invalidateSize(), 250);
+              });
+            }
+
+            // Driver truck icon
+            const truckIcon = L.divIcon({
+              html: `<div style="background:#0f172a; border:2px solid #ffffff; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">🚚</div>`,
+              className: "driver-nav-icon",
+              iconSize: [36, 36],
+              iconAnchor: [18, 18],
+            });
+            navDriverMarker = L.marker([25.654, 91.896], { icon: truckIcon }).addTo(navMap);
+
+            // Controls
+            document.getElementById("btn-recenter-nav").addEventListener("click", () => {
+              if (navDriverMarker) navMap.panTo(navDriverMarker.getLatLng());
+            });
+            document.getElementById("btn-quick-report-map").addEventListener("click", () => {
+              document.getElementById("dock-report").click();
+            });
+            document.getElementById("btn-end-navigation").addEventListener("click", () => {
+              if (confirm(window.I18N ? window.I18N.t("confirm_end_trip") : "End active route navigation?")) {
+                document.getElementById("dock-route").click();
+              }
+            });
+
+            // Functional Rerouting Simulation Button
+            document.getElementById("btn-sim-reroute").addEventListener("click", triggerFunctionalReroute);
+
+            setupHazardModal();
+          }
+
+          setTimeout(() => navMap.invalidateSize(), 200);
+
+          if (selectedRoute && activeRouteEvaluation) {
+            plotNavigationMap(selectedRoute, activeRouteEvaluation);
+          }
+        }
+
+        function plotNavigationMap(route, evalResult) {
+          if (!navMap || !route) return;
+
+          if (navRoutePolyline) navMap.removeLayer(navRoutePolyline);
+          if (navOriginMarker) { navMap.removeLayer(navOriginMarker); navOriginMarker = null; }
+          if (navDestMarker) { navMap.removeLayer(navDestMarker); navDestMarker = null; }
+          navHazardMarkers.forEach((m) => navMap.removeLayer(m));
+          navHazardMarkers = [];
+
+          const waypoints = route.waypoints && route.waypoints.length > 0
+            ? route.waypoints
+            : [
+                [evalResult.origin.lat, evalResult.origin.lng],
+                [evalResult.destination.lat, evalResult.destination.lng],
+              ];
+
+          navRoutePolyline = L.polyline(waypoints, {
+            color: "#0284c7",
+            weight: 5,
+            opacity: 0.85,
+            dashArray: null,
+          }).addTo(navMap);
+
+          // 1. Origin Marker (Green START)
+          const startPt = waypoints[0];
+          const startIcon = L.divIcon({
+            className: "nav-start-marker-icon",
+            html: `<div style="background:#16a34a; color:#ffffff; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; border:2px solid #ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.25); white-space:nowrap; display:flex; align-items:center; gap:4px; pointer-events:auto;"><span>🟢</span><span>START</span></div>`,
+            iconAnchor: [35, 15],
+          });
+          navOriginMarker = L.marker(startPt, { icon: startIcon, zIndexOffset: 500 }).addTo(navMap);
+          navOriginMarker.bindPopup(`<strong>${window.I18N ? window.I18N.t("label_origin") : "Origin"}:</strong> ${evalResult.origin.name || "Start Point"}`);
+
+          // 2. Destination Marker (Flag 🏁)
+          const destPt = waypoints[waypoints.length - 1];
+          const destIcon = L.divIcon({
+            className: "nav-dest-marker-icon",
+            html: `<div style="background:#0f172a; color:#ffffff; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; border:2px solid #ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.25); white-space:nowrap; display:flex; align-items:center; gap:4px; pointer-events:auto;"><span>🏁</span><span>${evalResult.destination.name || "Finish"}</span></div>`,
+            iconAnchor: [40, 15],
+          });
+          navDestMarker = L.marker(destPt, { icon: destIcon, zIndexOffset: 500 }).addTo(navMap);
+          navDestMarker.bindPopup(`<strong>${window.I18N ? window.I18N.t("label_dest") : "Destination"}:</strong> ${evalResult.destination.name || "Finish"}`);
+
+          navMap.fitBounds(navRoutePolyline.getBounds(), { padding: [40, 40] });
+
+          // Plot active hazard ahead
+          const hazardLoc = waypoints[Math.floor(waypoints.length * 0.45)];
+          if (hazardLoc) {
+            const hazardIcon = L.divIcon({
+              html: `<div style="background:#dc2626; border:2px solid #ffffff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">⚠️</div>`,
+              className: "hazard-map-icon",
+              iconSize: [32, 32],
+              iconAnchor: [16, 16],
+            });
+
+            const marker = L.marker(hazardLoc, { icon: hazardIcon }).addTo(navMap);
+            marker.on("click", () => openHazardModal());
+            navHazardMarkers.push(marker);
+
+            // Show floating hazard badge
+            const badge = document.getElementById("nav-floating-hazard");
+            if (badge) badge.style.display = "flex";
+          }
+        }
+
+        function triggerFunctionalReroute() {
+          const banner = document.getElementById("nav-reroute-banner");
+          if (!banner) return;
+
+          banner.style.display = "block";
+          const reasonEl = document.getElementById("reroute-reason-text");
+          reasonEl.textContent = "Significant waterlogging and mudfall detected along NH-6 Barapani approach. Rerouting via Express Valley bypass.";
+
+          // Voice alert for reroute
+          if (window.NE8_VOICE) {
+            const lang = window.I18N ? window.I18N.getLanguage() : "en";
+            let speech = "Route updated. A safer path has been recommended to avoid road blockage ahead.";
+            if (lang === "ta") speech = "வழி புதுப்பிக்கப்பட்டது. முன்னே உள்ள அடைப்பைத் தவிர்க்க புதிய வழி பரிந்துரைக்கப்பட்டுள்ளது.";
+            if (lang === "hi") speech = "मार्ग अपडेट किया गया है। आगे सड़क अवरोध से बचने के लिए एक सुरक्षित नया मार्ग दिया गया है।";
+            if (lang === "bn") speech = "পথ পরিবর্তিত হয়েছে। সামনের বিপদ এড়াতে নতুন নিরাপদ পথের সুপারিশ করা হয়েছে।";
+            if (lang === "as") speech = "পথ সলনি কৰা হ'ল। আগৰ বিপদ পৰিহাৰ কৰিবলৈ নতুন নিৰাপদ পথৰ পৰামৰ্শ দিয়া হৈছে।";
+            window.NE8_VOICE.speak(speech);
+          }
+
+          document.getElementById("btn-reroute-open-gmaps").onclick = () => {
+            if (activeRouteEvaluation) {
+              openGoogleMapsNavigation(
+                activeRouteEvaluation.origin.name,
+                activeRouteEvaluation.destination.name
+              );
+            }
+          };
+        }
+
+        function setupHazardModal() {
+          document.getElementById("btn-view-hazard-details").addEventListener("click", openHazardModal);
+          document.getElementById("btn-close-hazard-modal").addEventListener("click", closeHazardModal);
+          document.getElementById("btn-modal-dismiss").addEventListener("click", closeHazardModal);
+        }
+
+        function openHazardModal() {
+          document.getElementById("hazard-detail-modal").style.display = "flex";
+        }
+
+        function closeHazardModal() {
+          document.getElementById("hazard-detail-modal").style.display = "none";
+        }
+
+        // -------------------------------------------------------------
+        // 1-TAP ROAD CONDITION REPORTING
+        // -------------------------------------------------------------
+        function setupReportSubmission() {
+          const opts = document.querySelectorAll(".hazard-card-opt");
+          opts.forEach((opt) => {
+            opt.addEventListener("click", () => {
+              opts.forEach((o) => o.classList.remove("is-selected"));
+              opt.classList.add("is-selected");
+              selectedReportCategory = opt.dataset.cat;
+            });
+          });
+
+          // Camera / File input
+          const cameraInput = document.getElementById("driver-camera-input");
+          const previewBox = document.getElementById("report-photo-preview-box");
+          const previewImg = document.getElementById("report-photo-preview-img");
+          const photoLabel = document.getElementById("report-photo-label");
+          const removeBtn = document.getElementById("btn-remove-photo");
+
+          cameraInput.addEventListener("change", async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file) {
+              photoLabel.textContent = "Processing photo...";
+              try {
+                if (typeof window.compressImage === "function") {
+                  attachedReportPhoto = await window.compressImage(file, 1200, 1200, 0.75);
+                } else {
+                  const reader = new FileReader();
+                  attachedReportPhoto = await new Promise((res) => {
+                    reader.onload = (ev) => res(ev.target.result);
+                    reader.onerror = () => res("");
+                    reader.readAsDataURL(file);
+                  });
+                }
+                previewImg.src = attachedReportPhoto;
+                previewBox.style.display = "block";
+                photoLabel.textContent = window.I18N ? window.I18N.t("photo_attached") : "Photo attached";
+              } catch (err) {
+                console.warn("Photo processing notice:", err);
+                photoLabel.textContent = window.I18N ? window.I18N.t("photo_optional") : "Take or Upload Photo (Optional)";
+              }
+            }
+          });
+
+          removeBtn.addEventListener("click", () => {
+            attachedReportPhoto = null;
+            previewImg.src = "";
+            previewBox.style.display = "none";
+            photoLabel.textContent = window.I18N ? window.I18N.t("photo_optional") : "Take or Upload Photo (Optional)";
+            cameraInput.value = "";
+          });
+
+          // Submit Button
+          const btnSubmit = document.getElementById("btn-submit-hazard-report");
+          btnSubmit.addEventListener("click", async () => {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span>⏳</span> <span>Submitting...</span>`;
+
+            const note = document.getElementById("report-optional-note").value.trim();
+
+            let reportCat = selectedReportCategory;
+            if (note && window.SafeRouteAI && window.SafeRouteAI.classifyHazardReport) {
+              try {
+                const aiClassification = await window.SafeRouteAI.classifyHazardReport(note);
+                if (aiClassification && aiClassification.category) {
+                  if (reportCat === "other" || (reportCat === "flooded" && aiClassification.category !== "flooded" && aiClassification.confidence >= 0.7)) {
+                    reportCat = aiClassification.category;
+                  }
+                }
+              } catch (e) {
+                console.warn("AI report classification notice:", e);
+              }
+            }
+
+            if (window.NE8_REPORTS) {
+              const res = await window.NE8_REPORTS.submitReport({
+                category: reportCat,
+                description: note,
+                photoFile: attachedReportPhoto,
+              });
+
+              if (res && res.success) {
+                const toast = document.getElementById("report-feedback-toast");
+                toast.style.display = "block";
+
+                // Voice confirmation
+                if (window.NE8_VOICE) {
+                  const lang = window.I18N ? window.I18N.getLanguage() : "en";
+                  let conf = "Road report submitted successfully.";
+                  if (lang === "ta") conf = "சாலை அறிக்கை வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது.";
+                  if (lang === "hi") conf = "सड़क रिपोर्ट सफलतापूर्वक सबमिट हो गई है।";
+                  if (lang === "bn") conf = "সড়ক রিপোর্ট সফলভাবে জমা দেওয়া হয়েছে।";
+                  if (lang === "as") conf = "পথৰ বাতৰি সফলতাৰে প্ৰেৰণ কৰা হ'ল।";
+                  window.NE8_VOICE.speak(conf);
+                }
+
+                setTimeout(() => {
+                  toast.style.display = "none";
+                  document.getElementById("report-optional-note").value = "";
+                  removeBtn.click();
+                  document.getElementById("dock-my-reports").click();
+                }, 1200);
+              }
+            }
+
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<span>🚀</span> <span>${window.I18N ? window.I18N.t("btn_submit_report") : "Submit Road Report"}</span>`;
+          });
+        }
+
+        // -------------------------------------------------------------
+        // MY REPORTS SCREEN & SOFT-DELETE
+        // -------------------------------------------------------------
+        function renderMyReports() {
+          const container = document.getElementById("my-reports-container");
+          if (!container) return;
+
+          const user = (window.NE8_AUTH && window.NE8_AUTH.getCurrentUser()) || currentUser;
+          const reports = window.NE8_REPORTS ? window.NE8_REPORTS.getUserReports(user.userId) : [];
+
+          if (reports.length === 0) {
+            container.innerHTML = `
+              <div class="driver-card" style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+                <div style="font-size:36px; margin-bottom:8px;">📋</div>
+                <strong style="color:var(--navy-dark);">${window.I18N ? window.I18N.t("no_reports_yet") : "No submitted reports yet."}</strong>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = "";
+          reports.forEach((rep) => {
+            const item = document.createElement("div");
+            item.className = "my-report-item";
+            item.innerHTML = `
+              <div class="my-report-top">
+                <div class="my-report-title">
+                  <span>${getCategoryIcon(rep.category)}</span>
+                  <span>${rep.title}</span>
+                </div>
+                <span class="pill ${rep.status === 'ACTIVE' ? 'pill-safe' : 'pill-caution'}">${rep.status}</span>
+              </div>
+              ${rep.photoUrl ? `<img src="${rep.photoUrl}" style="width:100%; height:140px; object-fit:cover; border-radius:6px;" alt="Report photo"/>` : ''}
+              <div style="font-size:13px; color:var(--text); line-height:1.4;">${rep.description}</div>
+              <div class="my-report-meta">
+                <span>📍 ${rep.place || "Hill section"}</span>
+                <span>🕒 ${formatTimeAgo(rep.timestamp)}</span>
+              </div>
+              <button type="button" class="btn-delete-report" data-id="${rep.id}">
+                <span>🗑️</span> <span>${window.I18N ? window.I18N.t("btn_delete") : "Delete"}</span>
+              </button>
+            `;
+
+            item.querySelector(".btn-delete-report").addEventListener("click", () => {
+              const confirmMsg = window.I18N ? window.I18N.t("confirm_delete_report") : "Delete this report? It will be immediately removed from public route scoring.";
+              if (confirm(confirmMsg)) {
+                const res = window.NE8_REPORTS.deleteUserReport(rep.id, user.userId);
+                if (res && res.success) {
+                  renderMyReports();
+                  if (activeRouteEvaluation) {
+                    runRouteEvaluation(activeRouteEvaluation.origin.name, activeRouteEvaluation.destination.name);
+                  }
+                } else {
+                  alert(res.error || "Could not delete report.");
+                }
+              }
+            });
+
+            container.appendChild(item);
+          });
+        }
+
+        function getCategoryIcon(cat) {
+          const map = {
+            flooded: "🌊",
+            damaged: "🚧",
+            accident: "💥",
+            blocked: "⛔",
+            traffic: "🚗",
+            visibility: "🌫️",
+            weather: "⛈️",
+            other: "⚠️",
+          };
+          return map[cat] || "⚠️";
+        }
+
+        function formatTimeAgo(ts) {
+          const diffMs = Date.now() - ts;
+          const mins = Math.floor(diffMs / 60000);
+          if (mins < 1) return window.I18N ? window.I18N.t("just_now") : "Just now";
+          if (mins < 60) return `${mins}m ago`;
+          const hrs = Math.floor(mins / 60);
+          return `${hrs}h ago`;
+        }
+
+        function setupLocationServices() {
+          if (!window.NE8_LOCATION) return;
+          window.NE8_LOCATION.subscribeLocation((loc) => {
+            const metaGps = document.getElementById("report-meta-gps");
+            if (loc) {
+              const str = `${loc.lat.toFixed(4)}° N, ${loc.lng.toFixed(4)}° E (±${loc.accuracy}m)`;
+              if (metaGps) metaGps.textContent = str;
+              if (navDriverMarker) navDriverMarker.setLatLng([loc.lat, loc.lng]);
+            }
+          });
+          window.NE8_LOCATION.requestCurrentPosition();
+        }
+
+        function setupSettings() {
+          const autoVoiceCheck = document.getElementById("pref-auto-voice");
+          const highContrastCheck = document.getElementById("pref-high-contrast");
+          const btnSave = document.getElementById("btn-save-settings");
+          const btnClear = document.getElementById("btn-clear-cache");
+          const toast = document.getElementById("settings-feedback-toast");
+
+          if (autoVoiceCheck) {
+            autoVoiceCheck.checked = localStorage.getItem("saferoute_pref_auto_voice") !== "false";
+          }
+          if (highContrastCheck) {
+            highContrastCheck.checked = localStorage.getItem("saferoute_pref_high_contrast") === "true";
+          }
+
+          if (btnSave) {
+            btnSave.addEventListener("click", () => {
+              if (autoVoiceCheck) {
+                localStorage.setItem("saferoute_pref_auto_voice", autoVoiceCheck.checked ? "true" : "false");
+              }
+              if (highContrastCheck) {
+                localStorage.setItem("saferoute_pref_high_contrast", highContrastCheck.checked ? "true" : "false");
+              }
+
+              if (toast) {
+                toast.style.display = "block";
+                toast.textContent = "Preferences saved successfully!";
+                setTimeout(() => { toast.style.display = "none"; }, 2500);
+              }
+            });
+          }
+
+          if (btnClear) {
+            btnClear.addEventListener("click", () => {
+              if (confirm("Clear local cache and offline telemetry data?")) {
+                localStorage.removeItem("saferoute_offline_reports_queue");
+                alert("Local cache cleared.");
+              }
+            });
+          }
+        }
+
+        function setupEmergencyAlertListener() {
+          const banner = document.getElementById("driver-official-alert-banner");
+          const titleEl = document.getElementById("driver-alert-title");
+          const instructionsEl = document.getElementById("driver-alert-instructions");
+          const corridorEl = document.getElementById("driver-alert-corridor");
+          const officerEl = document.getElementById("driver-alert-officer");
+          const sevEl = document.getElementById("driver-alert-severity");
+          const btnListen = document.getElementById("btn-listen-official-alert");
+          const btnDismiss = document.getElementById("btn-dismiss-official-alert");
+
+          let acknowledgedAlertId = localStorage.getItem("saferoute-ack-alert") || "";
+
+          async function checkActiveAlerts() {
+            try {
+              let alerts = [];
+              try {
+                const res = await fetch("/api/alerts/active", {
+                  signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  alerts = data.activeAlerts || [];
+                }
+              } catch (netErr) {
+                const raw = localStorage.getItem("saferoute_official_broadcasts");
+                if (raw) alerts = JSON.parse(raw);
+              }
+
+              if (!alerts || alerts.length === 0) {
+                if (banner) banner.style.display = "none";
+                return;
+              }
+
+              const latestAlert = alerts[0];
+              const alertId = latestAlert.id || latestAlert.alertId || "";
+              const isClear = latestAlert.isClearance || latestAlert.status === "RESOLVED" || (latestAlert.severity && (latestAlert.severity.toLowerCase() === "clearance" || latestAlert.severity.toLowerCase() === "safe"));
+              const alertAckKey = alertId + (isClear ? "_cleared" : "_active");
+
+              if (alertAckKey && alertAckKey === acknowledgedAlertId) {
+                if (banner) banner.style.display = "none";
+                return;
+              }
+
+              const alertTitle = isClear
+                ? (latestAlert.clearanceHeadline || latestAlert.headline || latestAlert.title || "Highway Corridor Reopened & Safe")
+                : (latestAlert.headline || latestAlert.title || "Emergency Highway Alert");
+
+              const alertInstructions = isClear
+                ? (latestAlert.clearanceMessage || latestAlert.message || latestAlert.instructions || "Disaster clearance operations complete. Road inspected and cleared by authorities. Route is safe to use.")
+                : (latestAlert.message || latestAlert.instructions || "");
+
+              const alertOfficer = latestAlert.clearedBy || latestAlert.issuedBy || latestAlert.officerName || "Regional Disaster Desk";
+              const iconEl = document.getElementById("driver-alert-icon");
+              const badgeTagEl = document.getElementById("driver-alert-badge-tag");
+
+              if (banner) {
+                banner.style.display = "block";
+                if (titleEl) titleEl.textContent = alertTitle;
+                if (instructionsEl) instructionsEl.textContent = alertInstructions;
+                if (corridorEl) corridorEl.textContent = latestAlert.corridor || "All Corridors";
+                if (officerEl) officerEl.textContent = alertOfficer;
+
+                if (isClear) {
+                  banner.style.background = "#f0fdf4";
+                  banner.style.borderColor = "#22c55e";
+                  banner.style.boxShadow = "0 4px 14px rgba(34, 197, 94, 0.22)";
+                  if (iconEl) iconEl.textContent = "✅";
+                  if (badgeTagEl) {
+                    badgeTagEl.textContent = "🟢 ALL CLEAR · ROUTE SAFE TO USE";
+                    badgeTagEl.style.color = "#15803d";
+                  }
+                  if (titleEl) titleEl.style.color = "#166534";
+                  if (instructionsEl) instructionsEl.style.color = "#14532d";
+                  if (sevEl) {
+                    sevEl.textContent = "ROUTE SAFE";
+                    sevEl.className = "pill pill-safe";
+                    sevEl.style.background = "#dcfce7";
+                    sevEl.style.color = "#15803d";
+                    sevEl.style.borderColor = "#86efac";
+                  }
+                  if (btnListen) {
+                    btnListen.style.borderColor = "#22c55e";
+                    btnListen.style.color = "#15803d";
+                  }
+                } else {
+                  banner.style.background = "#fef2f2";
+                  banner.style.borderColor = "#ef4444";
+                  banner.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.18)";
+                  if (iconEl) iconEl.textContent = "🚨";
+                  if (badgeTagEl) {
+                    badgeTagEl.textContent = "OFFICIAL EMERGENCY ALERT · HIGHWAY AUTHORITY";
+                    badgeTagEl.style.color = "#dc2626";
+                  }
+                  if (titleEl) titleEl.style.color = "#991b1b";
+                  if (instructionsEl) instructionsEl.style.color = "#7f1d1d";
+                  const alertSev = (latestAlert.severity || "CRITICAL").toUpperCase();
+                  if (sevEl) {
+                    sevEl.textContent = alertSev;
+                    sevEl.className = alertSev.includes("CRITICAL") || alertSev.includes("RISK") ? "pill pill-risk" : "pill pill-caution";
+                    sevEl.style.background = "";
+                    sevEl.style.color = "";
+                    sevEl.style.borderColor = "";
+                  }
+                  if (btnListen) {
+                    btnListen.style.borderColor = "#ef4444";
+                    btnListen.style.color = "#dc2626";
+                  }
+                }
+
+                if (btnListen) {
+                  const alertSpoken = isClear
+                    ? `Official Highway Clearance Announcement: ${alertTitle}. ${alertInstructions}`
+                    : `Official Highway Emergency Alert: ${alertTitle}. ${alertInstructions}`;
+                  if (window.SafeRouteVoice && window.SafeRouteVoice.bindSpeakButton) {
+                    window.SafeRouteVoice.bindSpeakButton(
+                      btnListen,
+                      () => alertSpoken,
+                      () => (window.I18N ? window.I18N.getLanguage() : "en")
+                    );
+                  } else if (window.NE8_VOICE) {
+                    btnListen.onclick = () => {
+                      window.NE8_VOICE.speak(alertSpoken, { buttonElement: btnListen });
+                    };
+                  }
+                }
+
+                if (btnDismiss) {
+                  btnDismiss.onclick = () => {
+                    acknowledgedAlertId = alertAckKey;
+                    if (alertAckKey) localStorage.setItem("saferoute-ack-alert", acknowledgedAlertId);
+                    banner.style.display = "none";
+                  };
+                }
+              }
+            } catch (err) {
+              console.warn("Alert check notice:", err);
+            }
+          }
+
+          checkActiveAlerts();
+          setInterval(checkActiveAlerts, 20000);
+
+          window.addEventListener("saferoute:emergency-alert", () => {
+            checkActiveAlerts();
+          });
+        }
+
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", () => {
+            navigator.serviceWorker.register("sw.js").catch((err) => {
+              console.log("SW registration notice:", err);
+            });
+          });
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+      })();
+    </script>
+  </body>
+</html>

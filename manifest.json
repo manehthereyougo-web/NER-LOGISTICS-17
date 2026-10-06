@@ -1,0 +1,20 @@
+{
+  "name": "SafeRoute Driver Companion · Road Safety",
+  "short_name": "SafeRoute",
+  "description": "Mobile-first road safety and quick hazard reporting companion for highway and mountain corridor drivers.",
+  "start_url": "driver.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230284c7'/><text x='50%25' y='65%25' font-size='260' font-weight='bold' font-family='sans-serif' text-anchor='middle' fill='%23ffffff'>SR</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["transportation", "navigation", "utilities"]
+}

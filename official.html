@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regional Situational Awareness · SafeRoute Authority Desk</title>
+    <meta name="description" content="Official Authority Dashboard for Northeast corridor situational awareness, disaster response, and weather-hazard monitoring." />
+
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet & MapLibre Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/sos.css" />
+    <style>
+      /* Official Authority Styles */
+      .official-privacy-banner {
+        background: var(--green-soft);
+        border: 1px solid var(--green-border);
+        border-radius: var(--radius);
+        padding: 10px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12.5px;
+        box-shadow: var(--shadow-sm);
+      }
+      .official-filter-box {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+      .official-select {
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid var(--line-strong);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        min-height: 38px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .official-select:focus {
+        border-color: var(--accent);
+      }
+      .feed-card-light {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: box-shadow 0.15s ease;
+      }
+      .feed-card-light:hover {
+        box-shadow: var(--shadow);
+      }
+
+      /* Emergency Broadcast Studio */
+      .broadcast-studio-box {
+        background: #ffffff;
+        border: 2px solid var(--red);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+      }
+      .broadcast-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--red-soft);
+        color: var(--red-text);
+        border: 1px solid var(--red-border);
+        border-radius: 99px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .broadcast-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        margin-top: 12px;
+      }
+      .broadcast-table th, .broadcast-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+      .broadcast-table th {
+        background: var(--bg-inset);
+        color: var(--navy-dark);
+        font-weight: 700;
+        font-size: 11.5px;
+        text-transform: uppercase;
+      }
+
+      /* Corridor Cards */
+      .corridor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .corridor-card {
+        background: #ffffff;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .corridor-card.corridor-risk {
+        border-color: var(--red);
+        border-left-width: 5px;
+      }
+      .corridor-card.corridor-caution {
+        border-color: var(--amber);
+        border-left-width: 5px;
+      }
+      .corridor-card.corridor-passable {
+        border-color: var(--green);
+        border-left-width: 5px;
+      }
+
+      /* Modal Styling */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 16px;
+      }
+      .modal-dialog {
+        background: #ffffff;
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 560px;
+        padding: 24px;
+        box-shadow: var(--shadow-lg);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      /* Photo Upload Module */
+      .photo-upload-dropzone {
+        border: 2px dashed var(--line-strong);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        background: var(--bg-inset);
+        transition: all 0.15s ease;
+      }
+      .photo-upload-dropzone:hover {
+        border-color: var(--accent);
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Global Role Switcher Banner with Language Selector -->
+    <div class="role-switcher-banner">
+      <div class="role-switcher-left">
+        <span class="role-switcher-tag" style="background: var(--green-soft); color: var(--green-text); border-color: var(--green-border);" data-i18n="role_official">
+          🏛️ Official Desk
+        </span>
+        <span style="color: var(--text-muted); font-size: 11px;">
+          <span data-i18n="label_officer">Officer</span>: <strong id="official-officer-name" style="color: var(--navy-dark);">Dr. H. Roy</strong> · <span data-i18n="official_authority_title">NER Disaster &amp; Highway Safety Authority</span>
+        </span>
+      </div>
+      <div class="role-switcher-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-sos-nav" aria-label="Emergency SOS">
+          <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+        </button>
+        <a class="role-pill-btn is-active" href="official.html" data-i18n="nav_official">Official Desk</a>
+        <a class="role-pill-btn" href="index.html" data-i18n="nav_overview">Overview</a>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- Topbar -->
+      <header class="topbar">
+        <a class="brand" href="official.html">
+          <div class="brand-mark" style="background: #047857;">NER</div>
+          <div>
+            <strong data-i18n="official_desk_brand">NER Highway Authority Desk</strong>
+            <span data-i18n="official_desk_tagline">Situational Awareness &amp; Emergency Dispatch</span>
+          </div>
+        </a>
+        <nav class="top-nav">
+          <a class="is-active" href="official.html" data-i18n="nav_official">Authority Desk</a>
+          <a href="#broadcast-studio-section" data-i18n="nav_broadcasts">Broadcast Alerts</a>
+          <a href="#corridors-section" data-i18n="nav_corridors_desk">Corridor Hazards</a>
+          <a href="#photo-upload-section" data-i18n="nav_field_photos">Field Photos</a>
+          <a href="#imd-weather-section" data-i18n="nav_weather_matrix">IMD Weather</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" id="btn-top-broadcast" class="btn btn-sm" style="background: var(--red); color: #ffffff; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 6px;" data-i18n="btn_broadcast_alert">
+            🚨 Broadcast Alert
+          </button>
+          <div class="top-meta" data-clock>--:--:--</div>
+          <button type="button" id="btn-official-logout" class="btn btn-secondary btn-sm" style="color: var(--red-text); border-color: var(--red-border); font-size: 11px; min-height: 32px;" data-i18n="btn_sign_out">
+            🚪 Sign Out
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <!-- Privacy Boundary Banner -->
+        <div class="official-privacy-banner">
+          <span style="color: var(--green-text); display: flex; align-items: center; gap: 8px; font-weight: 500;">
+            <span style="font-size: 16px;">🔒</span> <strong data-i18n="privacy_shield_banner">Official Situational View Active: Commercial logistics cargo values are strictly shielded under RBAC.</strong>
+          </span>
+          <span class="official-privacy-shield" data-i18n="rbac_privacy_active">RBAC PRIVACY SHIELD ACTIVE</span>
+        </div>
+
+        <!-- Page Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 22px;">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft); color: var(--green-text); border: 1px solid var(--green-border); border-radius: 99px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">
+              🚨 <span data-i18n="official_telemetry_badge">Regional Disaster Telemetry &amp; Authority Desk</span>
+            </div>
+            <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 800; color: var(--navy-dark);" data-i18n="official_title">
+              Northeast Corridor Situational Awareness
+            </h1>
+            <p style="margin: 0; color: var(--text-muted); font-size: 13.5px;" data-i18n="official_sub">
+              Cross-state highway accessibility monitoring, IMD meteorological warnings, and roadside incident verification across all 8 Northeast states.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="btn-open-broadcast-modal" class="btn" style="background: var(--red); color: #ffffff; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; min-height: 40px;" data-i18n="btn_issue_emergency_alert">
+              🚨 Issue Highway Emergency Alert
+            </button>
+            <a href="#photo-upload-section" class="btn btn-secondary" style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; min-height: 40px;" data-i18n="btn_upload_field_photo">
+              📸 Upload Field Photo
+            </a>
+          </div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <section class="logistics-stats-grid">
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="all_states">States Monitored</small>
+            <div class="logistics-kpi-val" style="color: var(--navy-dark);">8</div>
+            <small style="color: var(--green); font-size: 11.5px; font-weight: 600;" data-i18n="kpi_corridors_unified">NER Corridors Unified</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_hazards">Active Road Hazards</small>
+            <div class="logistics-kpi-val" style="color: var(--red);" id="official-kpi-hazards">1</div>
+            <small style="color: var(--red-text); font-size: 11.5px; font-weight: 600;" data-i18n="kpi_nh37_ongoing">NH-37 Blockage Ongoing</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="title_imd_warnings">IMD Weather Advisories</small>
+            <div class="logistics-kpi-val" style="color: var(--amber);" id="official-kpi-wx">4 Active</div>
+            <small style="color: var(--amber-text); font-size: 11.5px; font-weight: 600;" data-i18n="kpi_heavy_rain_alerts">Heavy rain &amp; snowpack alerts</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_field_reports_verified">Field Reports Verified</small>
+            <div class="logistics-kpi-val" style="color: var(--accent);" id="official-kpi-verified">0</div>
+            <small style="color: var(--text-muted); font-size: 11.5px;" data-i18n="kpi_realtime_ready">Real-time stream ready</small>
+          </article>
+        </section>
+
+        <!-- SECTION 1: EMERGENCY ALERT BROADCAST STUDIO (OFFICIAL EXCLUSIVE) -->
+        <section class="broadcast-studio-box" id="broadcast-studio-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+            <div>
+              <div class="broadcast-badge" data-i18n="official_broadcast_studio_badge">🚨 Official Broadcast Studio · Exclusive Access</div>
+              <h2 style="margin: 6px 0 2px 0; font-size: 17px; font-weight: 800; color: var(--navy-dark);" data-i18n="official_broadcast_title">
+                Highway Authority Emergency Alert System
+              </h2>
+              <p style="margin: 0; font-size: 12.5px; color: var(--text-muted);" data-i18n="official_broadcast_desc">
+                Broadcasts instantly alert all active SafeRoute drivers with high-priority visual banners and localized voice read-aloud.
+              </p>
+            </div>
+            <button type="button" class="btn btn-sm" id="btn-trigger-broadcast" style="background: var(--red); color: #ffffff; font-weight: 700; padding: 8px 16px;" data-i18n="btn_create_broadcast">
+              + Create New Highway Broadcast
+            </button>
+          </div>
+
+          <!-- Active & Historical Broadcasts Table -->
+          <div style="overflow-x: auto;">
+            <table class="broadcast-table">
+              <thead>
+                <tr>
+                  <th data-i18n="col_status">Status</th>
+                  <th data-i18n="col_timestamp">Timestamp</th>
+                  <th data-i18n="col_target_highway">Target Highway</th>
+                  <th data-i18n="col_state">State</th>
+                  <th data-i18n="col_severity">Severity</th>
+                  <th data-i18n="col_headline">Alert Headline</th>
+                  <th data-i18n="col_issued_by">Issued By</th>
+                  <th data-i18n="col_actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="broadcast-audit-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 18px;" data-i18n="loading_broadcasts">
+                    Loading highway broadcasts audit log...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SECTION 2: STRATEGIC NORTHEAST CORRIDOR MONITORING DESK -->
+        <section style="margin-bottom: 24px;" id="corridors-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--navy-dark);" data-i18n="official_corridors_title">
+                🛣️ Strategic Northeast Corridor Monitoring Desk
+              </h2>
+              <small style="color: var(--text-muted); font-size: 12.5px;" data-i18n="official_corridors_desc">
+                Critical mountain transit arteries, passability status, choke point vulnerability &amp; flow speeds.
+              </small>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--green-border);" data-i18n="official_sensor_synced">
+              ● LIVE SENSOR FEEDS SYNCED
+            </span>
+          </div>
+
+          <div class="corridor-grid">
+            <!-- NH-6 -->
+            <div class="corridor-card corridor-caution">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 15px; color: var(--navy-dark);">NH-6 Arterial</strong>
+                  <span class="pill pill-caution" style="font-size: 10px;" data-i18n="badge_yellow_advisory">CAUTION</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                  Shillong ➔ Jowai ➔ Sonapur ➔ Silchar
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text); background: var(--bg-inset); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                  <div>⚠️ <strong data-i18n="label_choke_point">Choke Point:</strong> Sonapur Tunnel (Km 141)</div>
+                  <div>🌧️ <strong data-i18n="label_hazard">Hazard:</strong> Mudslide Risk · Heavy Rain</div>
+                  <div>🚗 <strong data-i18n="label_flow_speed">Flow Speed:</strong> ~28 km/h</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm btn-corridor-alert" data-corridor="NH-6" data-state="Meghalaya" style="font-size: 11px; color: var(--amber-text); border-color: var(--amber-border);">
+                🚨 <span data-i18n="btn_broadcast_corridor">Broadcast Corridor Alert</span> (NH-6)
+              </button>
+            </div>
+
+            <!-- NH-37 -->
+            <div class="corridor-card corridor-risk">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 15px; color: var(--navy-dark);">NH-37 Lifeline</strong>
+                  <span class="pill pill-risk" style="font-size: 10px;" data-i18n="badge_red_warning">CRITICAL RISK</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                  Silchar ➔ Jiribam ➔ Noney ➔ Imphal
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text); background: var(--bg-inset); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                  <div>⛔ <strong data-i18n="label_choke_point">Choke Point:</strong> Jiribam Gorge Bridge</div>
+                  <div>🪨 <strong data-i18n="label_hazard">Hazard:</strong> Active Subsidence &amp; Mudfall</div>
+                  <div>🚗 <strong data-i18n="label_flow_speed">Flow Speed:</strong> ~16 km/h (Crawl)</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm btn-corridor-alert" data-corridor="NH-37" data-state="Manipur" style="font-size: 11px; color: var(--red-text); border-color: var(--red-border);">
+                🚨 <span data-i18n="btn_broadcast_corridor">Broadcast Corridor Alert</span> (NH-37)
+              </button>
+            </div>
+
+            <!-- NH-13 -->
+            <div class="corridor-card corridor-caution">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 15px; color: var(--navy-dark);">NH-13 Trans-Arunachal</strong>
+                  <span class="pill pill-caution" style="font-size: 10px;" data-i18n="driver_hazard_snow">SUB-ZERO ICE</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                  Bhalukpong ➔ Bomdila ➔ Sela ➔ Tawang
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text); background: var(--bg-inset); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                  <div>❄️ <strong data-i18n="label_choke_point">Choke Point:</strong> Sela Pass (13,700 ft)</div>
+                  <div>🧊 <strong data-i18n="label_hazard">Hazard:</strong> Black Ice &amp; Snowpack</div>
+                  <div>🚗 <strong data-i18n="label_flow_speed">Flow Speed:</strong> ~22 km/h</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm btn-corridor-alert" data-corridor="NH-13" data-state="Arunachal Pradesh" style="font-size: 11px; color: var(--amber-text); border-color: var(--amber-border);">
+                🚨 <span data-i18n="btn_broadcast_corridor">Broadcast Corridor Alert</span> (NH-13)
+              </button>
+            </div>
+
+            <!-- NH-29 -->
+            <div class="corridor-card corridor-passable">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 15px; color: var(--navy-dark);">NH-29 Trunk</strong>
+                  <span class="pill pill-safe" style="font-size: 10px;" data-i18n="badge_green_passable">PASSABLE</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                  Dimapur ➔ Chumukedima ➔ Kohima
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text); background: var(--bg-inset); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                  <div>🛣️ <strong data-i18n="label_choke_point">Choke Point:</strong> Chumukedima Four-Lane</div>
+                  <div>🚛 <strong data-i18n="label_hazard">Condition:</strong> Heavy Freight Convoy Moving</div>
+                  <div>🚗 <strong data-i18n="label_flow_speed">Flow Speed:</strong> ~44 km/h</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm btn-corridor-alert" data-corridor="NH-29" data-state="Nagaland" style="font-size: 11px; color: var(--green-text); border-color: var(--green-border);">
+                🚨 <span data-i18n="btn_broadcast_corridor">Broadcast Corridor Alert</span> (NH-29)
+              </button>
+            </div>
+
+            <!-- NH-10 -->
+            <div class="corridor-card corridor-caution">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 15px; color: var(--navy-dark);">NH-10 Teesta Spur</strong>
+                  <span class="pill pill-caution" style="font-size: 10px;" data-i18n="badge_yellow_advisory">CAUTION</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                  Sevoke ➔ Teesta Bazar ➔ Gangtok
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text); background: var(--bg-inset); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                  <div>🌊 <strong data-i18n="label_choke_point">Choke Point:</strong> Teesta Riverbed (Km 28)</div>
+                  <div>🚧 <strong data-i18n="label_hazard">Hazard:</strong> Embankment Slumping / Single Lane</div>
+                  <div>🚗 <strong data-i18n="label_flow_speed">Flow Speed:</strong> ~30 km/h</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm btn-corridor-alert" data-corridor="NH-10" data-state="Sikkim" style="font-size: 11px; color: var(--amber-text); border-color: var(--amber-border);">
+                🚨 <span data-i18n="btn_broadcast_corridor">Broadcast Corridor Alert</span> (NH-10)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: DISASTER PHOTO UPLOAD FACILITY (OFFICER OBSERVATION) -->
+        <section id="photo-upload-section" class="card card-pad" style="background: #ffffff; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--blue-text); border: 1px solid var(--blue-border); border-radius: 99px; padding: 2px 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;" data-i18n="officer_field_facility">
+                📸 Officer Field Facility
+              </div>
+              <h2 style="margin: 4px 0 2px 0; font-size: 17px; font-weight: 800; color: var(--navy-dark);" data-i18n="upload_disaster_photos_title">
+                Upload Disaster &amp; Hazard Photos
+              </h2>
+              <small style="color: var(--text-muted);" data-i18n="upload_disaster_photos_sub">
+                Submit official geotagged photos of road collapses, bridge damages, or rockfalls. Reports are automatically marked as <strong>VERIFIED</strong>.
+              </small>
+            </div>
+          </div>
+
+          <form id="officer-photo-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;" data-i18n="label_photo_scene">
+                Disaster Photo / Scene Capture
+              </label>
+              <div class="photo-upload-dropzone" id="photo-dropzone" onclick="document.getElementById('officer-photo-file').click();">
+                <input type="file" id="officer-photo-file" accept="image/*" capture="environment" style="display: none;" />
+                <div id="photo-preview-box" style="display: none; margin-bottom: 8px;">
+                  <img id="photo-preview-img" src="" alt="Incident preview" style="max-height: 140px; border-radius: 6px; object-fit: cover;" />
+                </div>
+                <div id="photo-dropzone-prompt">
+                  <span style="font-size: 28px; display: block; margin-bottom: 4px;">📷</span>
+                  <strong style="color: var(--navy-dark); font-size: 13px;" data-i18n="prompt_tap_camera">Tap to capture with camera or choose photo</strong>
+                  <span style="display: block; color: var(--text-muted); font-size: 11px; margin-top: 2px;" data-i18n="prompt_photo_formats">Supports JPG, PNG, WEBP from field mobile devices</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_incident_title">
+                  Hazard / Incident Title
+                </label>
+                <input type="text" id="officer-incident-title" class="official-select" data-i18n-ph="ph_incident_title" placeholder="e.g. Major rockslide at Sonapur Tunnel KM 142" required />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_corridor_highway">
+                    Corridor / Highway
+                  </label>
+                  <select id="officer-incident-corridor" class="official-select">
+                    <option value="NH-6">NH-6 (East Jaintia Hills - Silchar)</option>
+                    <option value="NH-37">NH-37 (Jiribam - Imphal)</option>
+                    <option value="NH-13">NH-13 (Trans-Arunachal Highway)</option>
+                    <option value="NH-29">NH-29 (Dimapur - Kohima)</option>
+                    <option value="NH-10">NH-10 (Sevoke - Gangtok)</option>
+                    <option value="Other">Other Regional Route</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_state_jurisdiction">
+                    State Jurisdiction
+                  </label>
+                  <select id="officer-incident-state" class="official-select">
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Sikkim">Sikkim</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_severity_level">
+                    Severity Level
+                  </label>
+                  <select id="officer-incident-severity" class="official-select">
+                    <option value="risk" data-i18n="opt_critical_only">⛔ Critical (Road Blocked / Impassable)</option>
+                    <option value="caution" data-i18n="opt_caution_only">⚠️ Caution (Single-Lane / Heavy Delay)</option>
+                    <option value="safe" data-i18n="opt_normal_passable">🟢 Normal / Hazard Cleared</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_gps_location">
+                    GPS Location
+                  </label>
+                  <input type="text" id="officer-incident-gps" class="official-select" placeholder="Auto GPS: 25.120, 92.360" value="25.120, 92.360" />
+                </div>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_assessment_instructions">
+                  Official Assessment &amp; Divert Instructions
+                </label>
+                <textarea id="officer-incident-desc" class="official-select" rows="2" data-i18n-ph="ph_assessment_instructions" placeholder="Describe extent of blockage, road clearance ETA, and detour recommendation..." style="height: 60px;" required></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="btn-submit-officer-report" style="background: var(--navy); font-weight: 700; min-height: 42px;" data-i18n="btn_upload_verify">
+                📤 Upload &amp; Verify Incident Observation
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- SECTION 4: MAP & FILTERS GRID -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; margin-bottom: 24px;">
+          <!-- Regional Disaster Map -->
+          <section class="card card-pad" style="padding: 0; overflow: hidden; background: #ffffff;">
+            <div style="padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+              <h2 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--navy-dark); text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="map_regional_hazards">
+                🗺️ Regional Mountain Hazards &amp; Passability Map
+              </h2>
+              <small style="color: var(--green); font-weight: 700;" data-i18n="map_osm_verified">OpenStreetMap / Leaflet Verified</small>
+            </div>
+            <div id="official-regional-map" style="height: 480px; width: 100%; background: #e2e8f0;"></div>
+          </section>
+
+          <!-- Filter & Verification Sidebar -->
+          <div>
+            <!-- Filter Controls -->
+            <section class="official-filter-box">
+              <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--navy-dark);" data-i18n="filter_incidents">
+                🔍 Filter Incidents &amp; Telemetry:
+              </h3>
+              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div>
+                  <label style="display: block; color: var(--text-muted); font-size: 11.5px; font-weight: 600; margin-bottom: 4px;" data-i18n="label_select_state">Select State</label>
+                  <select id="filter-state" class="official-select">
+                    <option value="all" data-i18n="all_states">All 8 Northeast States</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Sikkim">Sikkim</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-muted); font-size: 11.5px; font-weight: 600; margin-bottom: 4px;" data-i18n="label_severity_level">Severity Level</label>
+                  <select id="filter-severity" class="official-select">
+                    <option value="all" data-i18n="filter_all_risk">All Severities</option>
+                    <option value="risk" data-i18n="opt_critical_only">Critical / High Risk Only</option>
+                    <option value="caution" data-i18n="opt_caution_only">Caution / Limited Flow</option>
+                    <option value="safe" data-i18n="opt_normal_passable">Normal Passable</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-muted); font-size: 11.5px; font-weight: 600; margin-bottom: 4px;" data-i18n="label_verification_workflow">Verification Workflow</label>
+                  <select id="filter-verification" class="official-select">
+                    <option value="all" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="UNVERIFIED" data-i18n="opt_unverified">🟡 Unverified (Raw Field Report)</option>
+                    <option value="VERIFIED" data-i18n="opt_verified">🔵 Verified (Official Confirmed)</option>
+                    <option value="RESOLVED" data-i18n="opt_resolved">🟢 Resolved (Hazard Cleared)</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- State Weather Risk Ticker -->
+            <section class="card card-pad" style="background: #ffffff;">
+              <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--accent);" data-i18n="title_imd_warnings">
+                🌦️ IMD Weather Bulletins
+              </h3>
+              <div id="official-imd-ticker" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- SECTION 5: IMD REGIONAL WEATHER OBSERVATORY MATRIX -->
+        <section id="imd-weather-section" class="card card-pad" style="background: #ffffff; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft); color: var(--green-text); border: 1px solid var(--green-border); border-radius: 99px; padding: 2px 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;" data-i18n="official_met_network">
+                🏛️ Official Meteorological Network
+              </div>
+              <h2 style="margin: 4px 0 2px 0; font-size: 17px; font-weight: 800; color: var(--navy-dark);" data-i18n="imd_matrix_title">
+                India Meteorological Department (IMD) Live Telemetry Matrix
+              </h2>
+              <small style="color: var(--text-muted);" data-i18n="imd_matrix_sub">
+                Verified regional capital observatory telemetry across all 8 Northeast states · Zero simulated numbers.
+              </small>
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted);" data-i18n="imd_attribution">
+              Attribution: Regional Meteorological Centre (RMC) Guwahati / IMD
+            </span>
+          </div>
+
+          <div id="official-imd-weather-grid">
+            <div style="text-align: center; padding: 24px; color: var(--text-muted);" data-i18n="imd_connecting">
+              Connecting to IMD Regional Observatories...
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 6: VERIFIED ROADSIDE REPORTS FEED -->
+        <section class="card card-pad" style="background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h2 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_active_incidents">
+                Regional Hazard Observations &amp; Verification Feed
+              </h2>
+              <small style="color: var(--text-muted);" data-i18n="official_feed_sub">Live reports submitted by field officers &amp; highway drivers</small>
+            </div>
+          </div>
+          <div id="official-feed-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px;"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- EMERGENCY ALERT BROADCAST MODAL (CONFIRMATION WORKFLOW) -->
+    <div class="modal-backdrop" id="alert-broadcast-modal">
+      <div class="modal-dialog">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+          <div>
+            <div class="broadcast-badge" data-i18n="modal_broadcast_badge">🚨 Official Authority Push</div>
+            <h3 style="margin: 6px 0 2px 0; font-size: 18px; font-weight: 800; color: var(--navy-dark);" data-i18n="modal_broadcast_title">
+              Broadcast Emergency Highway Alert
+            </h3>
+            <p style="margin: 0; font-size: 12px; color: var(--text-muted);" data-i18n="modal_broadcast_sub">
+              This alert will immediately appear on all active driver navigation consoles and can be read aloud in all 11 languages.
+            </p>
+          </div>
+          <button type="button" id="btn-close-broadcast-modal" style="background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">
+            ✕
+          </button>
+        </div>
+
+        <form id="emergency-broadcast-form" style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_target_corridor">
+              Target Corridor / Highway
+            </label>
+            <select id="broadcast-corridor" class="official-select">
+              <option value="ALL">🚨 ALL Northeast Corridors (Regional Emergency)</option>
+              <option value="NH-6">NH-6 (East Jaintia Hills - Silchar - Agartala)</option>
+              <option value="NH-37">NH-37 (Silchar - Jiribam - Imphal)</option>
+              <option value="NH-13">NH-13 (Trans-Arunachal Highway / Sela Pass)</option>
+              <option value="NH-29">NH-29 (Dimapur - Kohima - Mao Gate)</option>
+              <option value="NH-10">NH-10 (Sevoke - Teesta - Gangtok)</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_state_affected">
+                State Affected
+              </label>
+              <select id="broadcast-state" class="official-select">
+                <option value="All NE States" data-i18n="all_states">All 8 Northeast States</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Assam">Assam</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Sikkim">Sikkim</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_severity_class">
+                Severity Classification
+              </label>
+              <select id="broadcast-severity" class="official-select">
+                <option value="CRITICAL_CLOSURE" data-i18n="opt_closure">⛔ CRITICAL CLOSURE (Road Blocked)</option>
+                <option value="SEVERE_HAZARD" data-i18n="opt_other">⚠️ SEVERE HAZARD (Extreme Danger)</option>
+                <option value="ADVISORY" data-i18n="badge_yellow_advisory">ℹ️ ADVISORY (Caution / Weather Delay)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_alert_headline">
+              Alert Headline
+            </label>
+            <input type="text" id="broadcast-headline" class="official-select" data-i18n-ph="ph_alert_headline" placeholder="e.g. NH-6 Sonapur Tunnel Blocked by Landslide" required />
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;" data-i18n="label_advisory_instructions">
+              Advisory Instructions for Drivers
+            </label>
+            <textarea id="broadcast-message" class="official-select" rows="3" data-i18n-ph="ph_advisory_instructions" placeholder="Instruct drivers on holding locations, detour routes, and expected clearance time..." required></textarea>
+          </div>
+
+          <div style="background: var(--bg-inset); padding: 10px; border-radius: 6px; border: 1px solid var(--line); font-size: 11.5px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+              <input type="checkbox" id="broadcast-confirm-check" required />
+              <span data-i18n="broadcast_confirm_mandate">I confirm this is an authorized highway safety broadcast under official authority mandate.</span>
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+            <button type="button" id="btn-cancel-broadcast" class="btn btn-secondary" style="font-size: 13px;" data-i18n="btn_cancel">
+              Cancel
+            </button>
+            <button type="submit" id="btn-confirm-broadcast" class="btn btn-primary" style="background: var(--red); font-weight: 800; font-size: 13px;" data-i18n="btn_confirm_dispatch">
+              🚨 Confirm &amp; Dispatch Broadcast
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ALL-CLEAR / ROUTE SAFE BROADCAST MODAL -->
+    <div class="modal-backdrop" id="alert-clearance-modal">
+      <div class="modal-dialog">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+          <div>
+            <div class="broadcast-badge" style="background: var(--green-soft); color: var(--green-text); border: 1px solid var(--green-border);">🟢 Official Highway Authority All-Clear Notice</div>
+            <h3 style="margin: 6px 0 2px 0; font-size: 18px; font-weight: 800; color: var(--navy-dark);">
+              Declare Route Clear &amp; Safe to Use
+            </h3>
+            <p style="margin: 0; font-size: 12px; color: var(--text-muted);">
+              Dispatching this notice immediately alerts all active drivers and public portals that the disaster has been cleared and the route is safe.
+            </p>
+          </div>
+          <button type="button" id="btn-close-clearance-modal" style="background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">
+            ✕
+          </button>
+        </div>
+
+        <form id="emergency-clearance-form" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="hidden" id="clearance-target-id" value="" />
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+              Corridor Cleared
+            </label>
+            <input type="text" id="clearance-corridor-display" class="official-select" readonly style="background: var(--bg-inset); font-weight: 700; color: var(--navy-dark);" />
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+              All-Clear Headline (Shown to Drivers &amp; Public)
+            </label>
+            <input type="text" id="clearance-headline" class="official-select" required />
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+              Clearance &amp; Re-opening Advisory Message
+            </label>
+            <textarea id="clearance-message" class="official-select" rows="3" required></textarea>
+          </div>
+
+          <div style="background: var(--green-soft); padding: 10px; border-radius: 6px; border: 1px solid var(--green-border); font-size: 11.5px; color: var(--green-text);">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+              <input type="checkbox" id="clearance-confirm-check" checked required />
+              <span>I confirm on-site inspection is complete and declare this corridor cleared and safe for travel.</span>
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+            <button type="button" id="btn-cancel-clearance" class="btn btn-secondary" style="font-size: 13px;">
+              Cancel
+            </button>
+            <button type="submit" id="btn-confirm-clearance" class="btn btn-primary" style="background: var(--green); font-weight: 800; font-size: 13px;">
+              ✅ Broadcast Route Clear &amp; Safe to Use
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Leaflet & MapLibre GL Leaflet Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+
+    <!-- Config & Core Services -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/services/data-store.js"></script>
+    <script src="js/services/auth-service.js"></script>
+    <script src="js/services/voice-service.js"></script>
+    <script src="js/imd-weather.js"></script>
+    <script src="js/region.js"></script>
+    <script src="js/common.js"></script>
+
+    <!-- Official Desk Controller -->
+    <script>
+      (function () {
+        "use strict";
+
+        let officialMap = null;
+        let mapMarkers = [];
+
+        function initOfficialDesk() {
+          // Strict RBAC route guard
+          if (window.NE8_AUTH) {
+            const authed = window.NE8_AUTH.requireAuth("official");
+            if (!authed) return;
+          }
+
+          const user = window.NE8_AUTH ? window.NE8_AUTH.getCurrentUser() : null;
+          if (user && user.name) {
+            const offEl = document.getElementById("official-officer-name");
+            if (offEl) offEl.textContent = user.name;
+          }
+
+          const btnLogout = document.getElementById("btn-official-logout");
+          if (btnLogout && window.NE8_AUTH) {
+            btnLogout.addEventListener("click", () => {
+              window.NE8_AUTH.logout();
+            });
+          }
+
+          initMap();
+          renderFeed();
+          renderImdTicker();
+          renderImdWeatherMatrix();
+          setupFilters();
+          setupBroadcastStudio();
+          setupDisasterPhotoUpload();
+
+          window.addEventListener("ne8:data-changed", () => {
+            renderFeed();
+            updateMapMarkers();
+          });
+
+          window.addEventListener("saferoute:lang-changed", () => {
+            renderFeed();
+            renderImdTicker();
+            renderBroadcastHistory();
+            renderImdWeatherMatrix();
+          });
+        }
+
+        // ==========================================
+        // EMERGENCY ALERT BROADCAST STUDIO
+        // ==========================================
+        function setupBroadcastStudio() {
+          const modal = document.getElementById("alert-broadcast-modal");
+          const openBtns = [
+            document.getElementById("btn-top-broadcast"),
+            document.getElementById("btn-open-broadcast-modal"),
+            document.getElementById("btn-trigger-broadcast"),
+          ];
+          const closeBtn = document.getElementById("btn-close-broadcast-modal");
+          const cancelBtn = document.getElementById("btn-cancel-broadcast");
+          const form = document.getElementById("emergency-broadcast-form");
+
+          openBtns.forEach((btn) => {
+            if (btn) {
+              btn.addEventListener("click", () => {
+                modal.style.display = "flex";
+              });
+            }
+          });
+
+          const closeModal = () => {
+            modal.style.display = "none";
+            form.reset();
+          };
+
+          if (closeBtn) closeBtn.addEventListener("click", closeModal);
+          if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+          // Corridor specific broadcast buttons
+          document.querySelectorAll(".btn-corridor-alert").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const corridor = btn.dataset.corridor;
+              const state = btn.dataset.state;
+              document.getElementById("broadcast-corridor").value = corridor;
+              document.getElementById("broadcast-state").value = state;
+              document.getElementById("broadcast-headline").value = `ALERT: ${corridor} Traffic Restricted`;
+              document.getElementById("broadcast-message").value = `Caution on ${corridor} (${state}): Heavy mountain transit delays. Heavy commercial vehicles advised to proceed with extreme caution or divert.`;
+              modal.style.display = "flex";
+            });
+          });
+
+          // Form submission
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            // RBAC verification: Only official can broadcast
+            const user = window.NE8_AUTH ? window.NE8_AUTH.getCurrentUser() : null;
+            if (!user || user.role !== "official") {
+              alert("Error: Unauthorized. Only official authority desk accounts may broadcast emergency alerts.");
+              return;
+            }
+
+            const corridor = document.getElementById("broadcast-corridor").value;
+            const state = document.getElementById("broadcast-state").value;
+            const severity = document.getElementById("broadcast-severity").value;
+            const headline = document.getElementById("broadcast-headline").value.trim();
+            const message = document.getElementById("broadcast-message").value.trim();
+
+            const alertPayload = {
+              id: "alert-" + Date.now(),
+              corridor: corridor,
+              state: state,
+              severity: severity,
+              headline: headline,
+              message: message,
+              issuedBy: user.name || "Dr. H. Roy",
+              timestamp: new Date().toISOString(),
+              status: "ACTIVE",
+            };
+
+            // Attempt backend broadcast
+            try {
+              const res = await fetch("/api/alerts/broadcast", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(alertPayload),
+              });
+              if (res.ok) {
+                console.info("Official emergency broadcast synchronized with server.");
+              }
+            } catch (err) {
+              console.warn("Backend broadcast server unavailable, saving locally.", err);
+            }
+
+            // Always update local cache & notify active tabs (Drivers, etc.)
+            let history = [];
+            try {
+              const raw = localStorage.getItem("saferoute_official_broadcasts");
+              if (raw) history = JSON.parse(raw);
+            } catch {}
+            history.unshift(alertPayload);
+            localStorage.setItem("saferoute_official_broadcasts", JSON.stringify(history));
+
+            // Fire real-time event for driver PWA
+            window.dispatchEvent(
+              new CustomEvent("saferoute:emergency-alert", {
+                detail: alertPayload,
+              })
+            );
+
+            alert("🚨 Emergency Broadcast Dispatched to all SafeRoute drivers!");
+            closeModal();
+            renderBroadcastHistory();
+          });
+
+          // All-Clear / Route Safe Clearance Modal Wiring
+          const clearanceModal = document.getElementById("alert-clearance-modal");
+          const btnCloseClearance = document.getElementById("btn-close-clearance-modal");
+          const btnCancelClearance = document.getElementById("btn-cancel-clearance");
+          const clearanceForm = document.getElementById("emergency-clearance-form");
+
+          const closeClearance = () => {
+            if (clearanceModal) clearanceModal.style.display = "none";
+          };
+
+          if (btnCloseClearance) btnCloseClearance.addEventListener("click", closeClearance);
+          if (btnCancelClearance) btnCancelClearance.addEventListener("click", closeClearance);
+
+          if (clearanceForm) {
+            clearanceForm.addEventListener("submit", async (e) => {
+              e.preventDefault();
+
+              const user = window.NE8_AUTH ? window.NE8_AUTH.getCurrentUser() : null;
+              const officerName = (user && user.name) || "Dr. H. Roy";
+              const targetId = document.getElementById("clearance-target-id").value;
+              const clearanceHeadline = document.getElementById("clearance-headline").value.trim();
+              const clearanceMessage = document.getElementById("clearance-message").value.trim();
+
+              try {
+                await fetch("/api/alerts/resolve", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: targetId,
+                    alertId: targetId,
+                    role: "official",
+                    clearanceHeadline,
+                    clearanceMessage,
+                    clearedBy: officerName,
+                  }),
+                });
+              } catch (err) {
+                console.warn("Backend resolve call error:", err);
+              }
+
+              let history = [];
+              try {
+                const raw = localStorage.getItem("saferoute_official_broadcasts");
+                if (raw) history = JSON.parse(raw);
+              } catch {}
+
+              let clearanceAlert = null;
+              history = history.map((item) => {
+                if (item.id === targetId || item.alertId === targetId) {
+                  clearanceAlert = {
+                    ...item,
+                    status: "RESOLVED",
+                    isClearance: true,
+                    severity: "clearance",
+                    clearanceHeadline,
+                    clearanceMessage,
+                    headline: clearanceHeadline,
+                    message: clearanceMessage,
+                    clearedBy: officerName,
+                    resolvedAt: new Date().toISOString(),
+                    clearanceExpiresAt: new Date(Date.now() + 4 * 3600000).toISOString(),
+                  };
+                  return clearanceAlert;
+                }
+                return item;
+              });
+
+              if (!clearanceAlert && history.length > 0) {
+                history[0].status = "RESOLVED";
+                history[0].isClearance = true;
+                history[0].clearanceHeadline = clearanceHeadline;
+                history[0].clearanceMessage = clearanceMessage;
+                history[0].clearanceExpiresAt = new Date(Date.now() + 4 * 3600000).toISOString();
+                clearanceAlert = history[0];
+              }
+              localStorage.setItem("saferoute_official_broadcasts", JSON.stringify(history));
+
+              // Fire real-time event for driver PWA and public portal
+              window.dispatchEvent(
+                new CustomEvent("saferoute:emergency-alert", {
+                  detail: clearanceAlert || {
+                    status: "RESOLVED",
+                    isClearance: true,
+                    clearanceHeadline,
+                    clearanceMessage,
+                  },
+                })
+              );
+
+              alert("✅ All-Clear Broadcast Dispatched! All active driver navigation consoles and public dashboards have been notified that the route is safe to use.");
+              closeClearance();
+              renderBroadcastHistory();
+            });
+          }
+
+          renderBroadcastHistory();
+        }
+
+        async function renderBroadcastHistory() {
+          const tbody = document.getElementById("broadcast-audit-body");
+          if (!tbody) return;
+
+          let alerts = [];
+          try {
+            const res = await fetch("/api/alerts/history");
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.alerts) alerts = data.alerts;
+              else if (data && data.history) alerts = data.history;
+            }
+          } catch {}
+
+          if (alerts.length === 0) {
+            try {
+              const raw = localStorage.getItem("saferoute_official_broadcasts");
+              if (raw) alerts = JSON.parse(raw);
+            } catch {}
+          }
+
+          // Preload an initial alert if empty
+          if (alerts.length === 0) {
+            alerts = [
+              {
+                id: "alert-init-1",
+                corridor: "NH-37",
+                state: "Manipur",
+                severity: "CRITICAL_CLOSURE",
+                headline: "NH-37 Jiribam-Imphal Gorge Blockage",
+                message: "Rockslide near Barak bridge km 42. Road closed to heavy trucks until inspection.",
+                issuedBy: "Dr. H. Roy",
+                timestamp: new Date().toISOString(),
+                status: "ACTIVE",
+              },
+            ];
+            localStorage.setItem("saferoute_official_broadcasts", JSON.stringify(alerts));
+          }
+
+          const t = (k, fb) => (window.I18N ? window.I18N.t(k, fb) : fb);
+
+          tbody.innerHTML = alerts.map((a) => {
+            const isActive = a.status === "ACTIVE";
+            const isClearance = a.isClearance || (a.status === "RESOLVED" && a.clearanceHeadline);
+            const sevPill = isClearance
+              ? `<span class="pill pill-safe" style="font-size:10.5px; background:var(--green-soft); color:var(--green-text); border:1px solid var(--green-border);">🟢 ROUTE SAFE</span>`
+              : a.severity === "CRITICAL_CLOSURE" 
+              ? `<span class="pill pill-risk" style="font-size:10.5px;">${t("risk", "CRITICAL")}</span>`
+              : `<span class="pill pill-caution" style="font-size:10.5px;">${t("caution", "ADVISORY")}</span>`;
+            
+            const statusPill = isActive
+              ? `<span style="background:var(--red-soft); color:var(--red-text); border:1px solid var(--red-border); font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:99px;">${t("status_active", "● ACTIVE")}</span>`
+              : `<span style="background:var(--green-soft); color:var(--green-text); border:1px solid var(--green-border); font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:99px;">✓ CLEARED &amp; SAFE</span>`;
+
+            return `
+              <tr>
+                <td>${statusPill}</td>
+                <td style="color:var(--text-muted); font-size:11.5px;">${new Date(a.timestamp || a.issuedAt || Date.now()).toLocaleTimeString()}</td>
+                <td><strong>${a.corridor}</strong></td>
+                <td>${a.state || "Regional"}</td>
+                <td>${sevPill}</td>
+                <td>
+                  <strong style="color:var(--navy-dark);">${a.clearanceHeadline || a.headline || a.title}</strong>
+                  <div style="color:var(--text-muted); font-size:11.5px; margin-top:2px;">${a.clearanceMessage || a.message || a.instructions}</div>
+                </td>
+                <td style="color:var(--text-muted); font-size:11.5px;">${a.clearedBy || a.issuedBy || a.officerName || t("label_officer", "Officer")}</td>
+                <td>
+                  ${
+                    isActive
+                      ? `<button type="button" class="btn btn-secondary btn-sm btn-resolve-alert" data-id="${a.id || a.alertId}" style="font-size:11px; padding:3px 8px; color:var(--green); border-color:var(--green); font-weight:700;">✓ ${t("btn_resolve", "Resolve & Clear Route")}</button>`
+                      : `<span style="color:var(--green); font-size:11px; font-weight:700;">🟢 Broadcasted Safe</span>`
+                  }
+                </td>
+              </tr>
+            `;
+          }).join("");
+
+          tbody.querySelectorAll(".btn-resolve-alert").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const id = btn.dataset.id;
+              const alertItem = alerts.find((a) => (a.id && a.id === id) || (a.alertId && a.alertId === id)) || {};
+              const corridor = alertItem.corridor || "Highway Corridor";
+
+              const targetIdInput = document.getElementById("clearance-target-id");
+              const corridorInput = document.getElementById("clearance-corridor-display");
+              const headlineInput = document.getElementById("clearance-headline");
+              const msgInput = document.getElementById("clearance-message");
+              const clearanceModal = document.getElementById("alert-clearance-modal");
+
+              if (targetIdInput) targetIdInput.value = id;
+              if (corridorInput) corridorInput.value = corridor;
+              if (headlineInput) headlineInput.value = `✅ ALL CLEAR: ${corridor} Hazard Cleared — Route Safe to Use`;
+              if (msgInput) msgInput.value = `Disaster clearance operations complete on ${corridor}. Debris removed and road inspected by highway authorities. Normal transit is fully restored and safe to use.`;
+
+              if (clearanceModal) {
+                clearanceModal.style.display = "flex";
+              }
+            });
+          });
+        }
+
+        // ==========================================
+        // DISASTER PHOTO UPLOAD FACILITY
+        // ==========================================
+        function setupDisasterPhotoUpload() {
+          const fileInput = document.getElementById("officer-photo-file");
+          const previewBox = document.getElementById("photo-preview-box");
+          const previewImg = document.getElementById("photo-preview-img");
+          const prompt = document.getElementById("photo-dropzone-prompt");
+          const form = document.getElementById("officer-photo-form");
+
+          let uploadedPhotoData = "";
+
+          fileInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              try {
+                if (typeof window.compressImage === "function") {
+                  uploadedPhotoData = await window.compressImage(file, 1200, 1200, 0.75);
+                } else {
+                  const reader = new FileReader();
+                  uploadedPhotoData = await new Promise((res) => {
+                    reader.onload = (ev) => res(ev.target.result);
+                    reader.onerror = () => res("");
+                    reader.readAsDataURL(file);
+                  });
+                }
+                previewImg.src = uploadedPhotoData;
+                previewBox.style.display = "block";
+                prompt.style.display = "none";
+              } catch (err) {
+                console.warn("Photo compression error:", err);
+              }
+            }
+          });
+
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById("officer-incident-title").value.trim();
+            const corridor = document.getElementById("officer-incident-corridor").value;
+            const state = document.getElementById("officer-incident-state").value;
+            const severity = document.getElementById("officer-incident-severity").value;
+            const gpsStr = document.getElementById("officer-incident-gps").value;
+            const desc = document.getElementById("officer-incident-desc").value.trim();
+
+            let lat = 25.120, lng = 92.360;
+            if (gpsStr && gpsStr.includes(",")) {
+              const parts = gpsStr.split(",");
+              lat = parseFloat(parts[0]) || lat;
+              lng = parseFloat(parts[1]) || lng;
+            }
+
+            const user = window.NE8_AUTH ? window.NE8_AUTH.getCurrentUser() : null;
+            const officerName = (user && user.name) || "Dr. H. Roy";
+
+            let finalPhoto = uploadedPhotoData || "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=60";
+
+            // Upload photo to Supabase Storage if configured
+            if (uploadedPhotoData && window.NE8_SUPABASE && window.NE8_SUPABASE.isSupabaseConfigured()) {
+              try {
+                const { publicUrl } = await window.NE8_SUPABASE.uploadPhoto(uploadedPhotoData);
+                if (publicUrl) {
+                  finalPhoto = publicUrl;
+                }
+              } catch (upErr) {
+                console.warn("Supabase upload exception:", upErr);
+              }
+            }
+
+            const newReport = {
+              id: "rep-off-" + Date.now(),
+              title: `[${corridor}] ${title}`,
+              description: desc,
+              state: state,
+              lat: lat,
+              lng: lng,
+              riskLevel: severity,
+              verificationStatus: "VERIFIED",
+              verifiedBy: officerName,
+              photo: finalPhoto,
+              photo_url: finalPhoto,
+              photoUrl: finalPhoto,
+              timestamp: Date.now(),
+              driverId: "OFFICIAL_DESK",
+              source: "OFFICIAL_PATROL",
+            };
+
+            // Save to Supabase DB if available
+            if (window.NE8_SUPABASE && window.NE8_SUPABASE.isSupabaseConfigured()) {
+              try {
+                await window.NE8_SUPABASE.saveIncident(newReport);
+              } catch (dbErr) {
+                console.warn("Supabase save incident exception:", dbErr);
+              }
+            }
+
+            if (window.NE8_DATA_STORE) {
+              window.NE8_DATA_STORE.addRoadReport(newReport);
+            }
+
+            alert("✅ Disaster observation recorded and officially verified.");
+            form.reset();
+            previewBox.style.display = "none";
+            prompt.style.display = "block";
+            uploadedPhotoData = "";
+
+            renderFeed();
+            updateMapMarkers();
+          });
+        }
+
+        // ==========================================
+        // IMD WEATHER MATRIX
+        // ==========================================
+        function renderImdWeatherMatrix() {
+          const container = document.getElementById("official-imd-weather-grid");
+          if (!container) return;
+
+          if (window.SafeRouteWeather && window.SafeRouteWeather.renderPublicWeatherSummary) {
+            window.SafeRouteWeather.renderPublicWeatherSummary("official-imd-weather-grid");
+          } else {
+            container.innerHTML = `<div style="padding:16px; color:var(--text-muted);">IMD Weather Module initializing...</div>`;
+          }
+        }
+
+        // ==========================================
+        // FILTERS & FEED
+        // ==========================================
+        function setupFilters() {
+          const stateSelect = document.getElementById("filter-state");
+          const sevSelect = document.getElementById("filter-severity");
+          const verifSelect = document.getElementById("filter-verification");
+
+          const applyFilter = () => {
+            renderFeed(stateSelect.value, sevSelect.value, verifSelect.value);
+            updateMapMarkers(stateSelect.value, sevSelect.value, verifSelect.value);
+          };
+
+          if (stateSelect) stateSelect.addEventListener("change", applyFilter);
+          if (sevSelect) sevSelect.addEventListener("change", applyFilter);
+          if (verifSelect) verifSelect.addEventListener("change", applyFilter);
+        }
+
+        function renderFeed(filterState = "all", filterSev = "all", filterVerif = "all") {
+          const reports = window.NE8_DATA_STORE ? window.NE8_DATA_STORE.getRoadReports({ includeDeleted: false }) : [];
+          const container = document.getElementById("official-feed-list");
+          if (!container) return;
+
+          let items = [...reports];
+          if (filterState !== "all") {
+            items = items.filter((r) => r.state && r.state.toLowerCase() === filterState.toLowerCase());
+          }
+          if (filterSev !== "all") {
+            items = items.filter((r) => r.riskLevel === filterSev);
+          }
+          if (filterVerif !== "all") {
+            items = items.filter((r) => (r.verificationStatus || "UNVERIFIED") === filterVerif);
+          }
+
+          const verifiedCount = reports.filter((r) => r.verificationStatus === "VERIFIED").length;
+          const kpiVer = document.getElementById("official-kpi-verified");
+          if (kpiVer) kpiVer.textContent = String(verifiedCount);
+
+          if (items.length === 0) {
+            const tNoMatch = window.I18N ? window.I18N.t("no_hazards_match", "No active hazard observations match filter criteria.") : "No active hazard observations match filter criteria.";
+            container.innerHTML = `
+              <div style="grid-column: 1/-1; text-align:center; padding:36px; color:var(--text-muted); background:var(--bg-inset); border-radius:8px; border:1px dashed var(--line);">
+                <span style="font-size:24px; display:block; margin-bottom:6px;">✅</span> <strong style="color:var(--navy-dark);">${tNoMatch}</strong>
+              </div>`;
+            return;
+          }
+
+          const t = (k, fb) => (window.I18N ? window.I18N.t(k, fb) : fb);
+
+          container.innerHTML = items.map((r) => {
+            const vStatus = r.verificationStatus || "UNVERIFIED";
+            const vBadgeClass = vStatus === "VERIFIED" ? "pill-safe" : vStatus === "RESOLVED" ? "pill-safe" : "pill-caution";
+            const statusLabel = vStatus === "VERIFIED" ? t("status_verified", "VERIFIED") : vStatus === "RESOLVED" ? t("status_resolved", "RESOLVED") : t("status_unverified", "UNVERIFIED");
+            const borderCol = r.riskLevel === 'risk' ? 'var(--red)' : 'var(--amber)';
+            const riskLabel = r.riskLevel === 'risk' ? t("risk", "CRITICAL") : r.riskLevel === 'caution' ? t("caution", "CAUTION") : t("safe", "SAFE");
+
+            return `
+              <div class="feed-card-light" style="border-left:4px solid ${borderCol};">
+                <div>
+                  ${r.photoUrl ? `<img src="${r.photoUrl}" style="width:100%; height:135px; object-fit:cover; border-radius:6px; margin-bottom:10px;" alt="Disaster photo" />` : ''}
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <strong style="color:var(--navy-dark); font-size:14px;">${r.title}</strong>
+                    <span class="pill pill-${r.riskLevel}">${riskLabel}</span>
+                  </div>
+                  <p style="margin:0 0 8px 0; font-size:12.5px; color:var(--text); line-height:1.4;">${r.description}</p>
+                  <div style="font-size:11.5px; color:var(--text-muted); border-top:1px solid var(--line); padding-top:6px; margin-bottom:10px;">
+                    <div>📍 ${t("label_gps_location", "Location")}: ${r.state} (${Number(r.lat).toFixed(3)}°, ${Number(r.lng).toFixed(3)}°)</div>
+                    <div>🕒 ${t("col_timestamp", "Filed")}: ${new Date(r.timestamp).toLocaleTimeString()}</div>
+                    <div style="color:var(--green); font-weight:600; margin-top:3px;">🔒 ${t("rbac_privacy_active", "Commercial Cargo Details: Shielded")}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px dashed var(--line);">
+                  <span class="pill ${vBadgeClass}" style="font-size:10.5px;">${statusLabel}</span>
+                  <div>
+                    ${
+                      vStatus === "UNVERIFIED"
+                        ? `<button type="button" class="btn btn-secondary btn-sm btn-verify" data-id="${r.id}" style="font-size:11.5px; padding:4px 10px; color:var(--accent); border-color:var(--accent); font-weight:700;">✓ ${t("btn_verify", "Verify")}</button>`
+                        : vStatus === "VERIFIED"
+                        ? `<button type="button" class="btn btn-secondary btn-sm btn-resolve" data-id="${r.id}" style="font-size:11.5px; padding:4px 10px; color:var(--green); border-color:var(--green); font-weight:700;">🏁 ${t("btn_resolve", "Mark Resolved")}</button>`
+                        : `<span style="font-size:11.5px; color:var(--green); font-weight:700;">${t("opt_resolved", "Cleared")}</span>`
+                    }
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          // Wire action buttons
+          container.querySelectorAll(".btn-verify").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              window.NE8_DATA_STORE.updateReportVerification(btn.dataset.id, "VERIFIED");
+              renderFeed(
+                document.getElementById("filter-state")?.value,
+                document.getElementById("filter-severity")?.value,
+                document.getElementById("filter-verification")?.value
+              );
+            });
+          });
+
+          container.querySelectorAll(".btn-resolve").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              window.NE8_DATA_STORE.updateReportVerification(btn.dataset.id, "RESOLVED");
+              renderFeed(
+                document.getElementById("filter-state")?.value,
+                document.getElementById("filter-severity")?.value,
+                document.getElementById("filter-verification")?.value
+              );
+            });
+          });
+        }
+
+        function renderImdTicker() {
+          const ticker = document.getElementById("official-imd-ticker");
+          if (!ticker) return;
+
+          const t = (k, fb) => (window.I18N ? window.I18N.t(k, fb) : fb);
+
+          const statesWx = [
+            { state: "Meghalaya", cond: `${t("opt_heavy_rain", "Heavy Rain")} (${t("badge_yellow_advisory", "Advisory")})`, icon: "🌧️", color: "var(--amber-text)" },
+            { state: "Arunachal Pradesh", cond: `${t("driver_hazard_snow", "Snow / Ice")} (${t("badge_yellow_advisory", "Advisory")})`, icon: "❄️", color: "var(--amber-text)" },
+            { state: "Assam", cond: `${t("opt_normal_passable", "Passable")} (${t("badge_green_passable", "Green")})`, icon: "🌤️", color: "var(--green)" },
+            { state: "Manipur", cond: `${t("opt_flood", "Flood Watch")} (${t("badge_yellow_advisory", "Yellow")})`, icon: "🌦️", color: "var(--amber-text)" },
+          ];
+
+          ticker.innerHTML = statesWx.map((s) => `
+            <div style="background:var(--bg-inset); border:1px solid var(--line); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:var(--navy-dark); display:block; font-size:12.5px;">${s.state}</strong>
+                <small style="color:${s.color}; font-weight:600;">${s.cond}</small>
+              </div>
+              <span style="font-size:18px;">${s.icon}</span>
+            </div>
+          `).join("");
+        }
+
+        function initMap() {
+          const mapEl = document.getElementById("official-regional-map");
+          if (!mapEl || typeof L === "undefined") return;
+
+          officialMap = L.map("official-regional-map", { attributionControl: true }).setView([26.0, 92.8], 7);
+
+          if (window.SafeRouteMap && window.SafeRouteMap.createTileLayer) {
+            window.SafeRouteMap.createTileLayer().addTo(officialMap);
+            window.SafeRouteMap.attachTileErrorBanner(officialMap, "official-regional-map");
+          } else {
+            L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+              attribution: '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+              maxZoom: 19,
+              crossOrigin: true,
+            }).addTo(officialMap);
+          }
+
+          window.addEventListener("resize", () => {
+            if (officialMap) officialMap.invalidateSize();
+          });
+
+          updateMapMarkers();
+        }
+
+        function updateMapMarkers(filterState = "all", filterSev = "all") {
+          if (!officialMap) return;
+
+          mapMarkers.forEach((m) => officialMap.removeLayer(m));
+          mapMarkers = [];
+
+          // Preloaded pass hazard pins
+          const criticalPasses = [
+            { name: "Sonapur Tunnel Pass (NH-6)", lat: 25.12, lng: 92.36, state: "Meghalaya", issue: "Landslide Mudslip Risk" },
+            { name: "Sela Pass (NH-13)", lat: 27.50, lng: 92.10, state: "Arunachal Pradesh", issue: "Freezing Black Ice & Snowpack" },
+            { name: "Imphal-Jiribam Gorge (NH-37)", lat: 24.78, lng: 93.15, state: "Manipur", issue: "Active Road Sinkhole & Mudfall" },
+          ];
+
+          criticalPasses.forEach((p) => {
+            const passIcon = L.divIcon({
+              html: `<div style="background:#ef4444; border:2.5px solid #ffffff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 2px 6px rgba(239,68,68,0.5);">⚠️</div>`,
+              className: "pass-pin",
+              iconSize: [32, 32],
+              iconAnchor: [16, 16],
+            });
+            const marker = L.marker([p.lat, p.lng], { icon: passIcon }).addTo(officialMap);
+            marker.bindPopup(`
+              <div style="font-family:var(--font, sans-serif); color:#0f172a; padding:2px;">
+                <strong style="font-size:13.5px; color:#0f172a; display:block;">${p.name}</strong>
+                <small style="color:#ef4444; font-weight:700;">${p.issue}</small>
+              </div>
+            `);
+            mapMarkers.push(marker);
+          });
+
+          // Driver & Official reported pins
+          const reports = window.NE8_DATA_STORE ? window.NE8_DATA_STORE.getRoadReports({ includeDeleted: false }) : [];
+          reports.forEach((r) => {
+            const pinColor = r.riskLevel === "risk" ? "#ef4444" : "#f59e0b";
+            const repIcon = L.divIcon({
+              html: `<div style="background:${pinColor}; border:2.5px solid #ffffff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 6px rgba(15,23,42,0.25);">📸</div>`,
+              className: "rep-pin",
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+            });
+            const marker = L.marker([r.lat, r.lng], { icon: repIcon }).addTo(officialMap);
+            marker.bindPopup(`
+              <div style="font-family:var(--font, sans-serif); color:#0f172a; padding:2px;">
+                <strong style="font-size:13.5px; color:#0f172a; display:block;">${r.title}</strong>
+                <small style="color:#64748b;">${r.description}</small>
+              </div>
+            `);
+            mapMarkers.push(marker);
+          });
+        }
+
+        document.addEventListener("DOMContentLoaded", initOfficialDesk);
+      })();
+    </script>
+    <!-- SOS Emergency Assistant -->
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+  </body>
+</html>

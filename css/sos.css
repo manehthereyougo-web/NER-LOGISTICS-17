@@ -1,0 +1,812 @@
+/* ==========================================================================
+   SafeRoute — Driver Emergency SOS Assistance Stylesheet
+   Professional, high-contrast, mobile-first emergency UX
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. SOS Trigger Buttons (Navbar & Floating Action)
+   -------------------------------------------------------------------------- */
+.btn-sos-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  padding: 7px 15px;
+  border-radius: 9999px;
+  border: 1px solid #f87171;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  user-select: none;
+  min-height: 34px;
+}
+
+.btn-sos-nav:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.5);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.btn-sos-nav:active {
+  transform: translateY(0);
+}
+
+.sos-pulse-ring {
+  width: 9px;
+  height: 9px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(255, 255, 255, 0.8);
+  animation: sos-beacon-pulse 2s infinite ease-out;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes sos-beacon-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.85);
+    transform: scale(0.95);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    transform: scale(1.15);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    transform: scale(0.95);
+  }
+}
+
+/* Floating mobile thumb-trigger button */
+.btn-sos-floating {
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 9999px;
+  padding: 11px 18px;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sos-float-glow 3s infinite ease-in-out;
+}
+
+.btn-sos-floating:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.6);
+}
+
+@keyframes sos-float-glow {
+  0%, 100% {
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  }
+  50% {
+    box-shadow: 0 6px 26px rgba(220, 38, 38, 0.75), 0 0 0 6px rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. High-Priority Full-Screen Emergency Modal
+   -------------------------------------------------------------------------- */
+.sos-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.84);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  animation: sos-fade-in 0.2s ease-out;
+}
+
+@keyframes sos-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sos-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0,0,0,0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  animation: sos-card-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+}
+
+@keyframes sos-card-up {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.sos-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid #dc2626;
+}
+
+.sos-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sos-badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #dc2626;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+}
+
+.sos-header-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.sos-header-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+.sos-btn-close {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sos-btn-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sos-body {
+  padding: 22px;
+  max-height: calc(88vh - 80px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   3. Step 1: Emergency Choice Selection
+   -------------------------------------------------------------------------- */
+.sos-prompt-lead {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.sos-prompt-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 20px;
+  line-height: 1.45;
+}
+
+.sos-choices-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.sos-choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 2px solid;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  user-select: none;
+  background: #ffffff;
+  min-height: 82px;
+}
+
+.sos-choice-btn.hospital-choice {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.sos-choice-btn.hospital-choice:hover {
+  border-color: #ef4444;
+  background: #fee2e2;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.16);
+}
+
+.sos-choice-btn.police-choice {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.sos-choice-btn.police-choice:hover {
+  border-color: #3b82f6;
+  background: #dbeafe;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.16);
+}
+
+.sos-choice-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.hospital-choice .sos-choice-icon {
+  background: #fee2e2;
+}
+
+.police-choice .sos-choice-icon {
+  background: #dbeafe;
+}
+
+.sos-choice-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.sos-choice-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.sos-extra-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sos-btn-secondary {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sos-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   4. Loading / Geolocation Acquisition State
+   -------------------------------------------------------------------------- */
+.sos-loading-box {
+  text-align: center;
+  padding: 36px 20px;
+}
+
+.sos-radar-spinner {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px auto;
+  border-radius: 50%;
+  border: 3px solid rgba(220, 38, 38, 0.2);
+  border-top-color: #dc2626;
+  animation: sos-spin 1s infinite linear;
+}
+
+@keyframes sos-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sos-loading-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.sos-loading-sub {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   5. Error & Fallback State (GPS Failure / No Results)
+   -------------------------------------------------------------------------- */
+.sos-error-box {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 14px;
+  padding: 22px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.sos-error-icon {
+  font-size: 38px;
+  margin-bottom: 8px;
+}
+
+.sos-error-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #9f1239;
+  margin-bottom: 6px;
+}
+
+.sos-error-desc {
+  font-size: 13px;
+  color: #881337;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.sos-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.sos-input-manual {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.sos-input-manual:focus {
+  border-color: #dc2626;
+}
+
+/* --------------------------------------------------------------------------
+   6. Recommended Facility Card
+   -------------------------------------------------------------------------- */
+.sos-facility-card {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.sos-facility-card.hospital-theme {
+  border-color: #f87171;
+  border-left-width: 6px;
+}
+
+.sos-facility-card.police-theme {
+  border-color: #60a5fa;
+  border-left-width: 6px;
+}
+
+.sos-facility-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+}
+
+.hospital-theme .sos-facility-tag {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.police-theme .sos-facility-tag {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.sos-facility-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  line-height: 1.25;
+}
+
+.sos-facility-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sos-metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  background: #f8fafc;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.sos-metric-chip.accent {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.sos-facility-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.sos-facility-phone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Primary Emergency Action Buttons */
+.sos-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.sos-btn-call {
+  background: #16a34a;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 48px;
+}
+
+.sos-btn-call:hover {
+  background: #15803d;
+}
+
+.sos-btn-call.disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.sos-btn-nav {
+  background: #2563eb;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 48px;
+}
+
+.sos-btn-nav:hover {
+  background: #1d4ed8;
+}
+
+.sos-btn-share {
+  grid-column: span 2;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 44px;
+}
+
+.sos-btn-share:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* --------------------------------------------------------------------------
+   7. Emergency Map View
+   -------------------------------------------------------------------------- */
+.sos-map-wrap {
+  width: 100%;
+  height: 240px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  overflow: hidden;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+#sos-leaflet-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   8. Alternative Nearby Facilities List
+   -------------------------------------------------------------------------- */
+.sos-alternatives-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.sos-alternatives-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #334155;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sos-alt-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.15s;
+}
+
+.sos-alt-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.sos-alt-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sos-alt-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sos-alt-meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.sos-alt-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sos-btn-alt-sm {
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   9. Emergency Contacts Manager Section
+   -------------------------------------------------------------------------- */
+.sos-contacts-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+
+.sos-contacts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sos-contacts-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #166534;
+}
+
+.sos-contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sos-contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #dcfce7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   10. Dispatch Status Box
+   -------------------------------------------------------------------------- */
+.sos-dispatch-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sos-dispatch-box.status-sending {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.sos-dispatch-box.status-sent {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.sos-dispatch-box.status-unavailable {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.sos-dispatch-box.status-failed {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .sos-actions-grid {
+    grid-template-columns: 1fr;
+  }
+  .sos-btn-share {
+    grid-column: span 1;
+  }
+  .sos-modal-card {
+    border-radius: 14px;
+  }
+  .sos-header {
+    padding: 14px 16px;
+  }
+  .sos-body {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "incidentId": "sos-test-1791222899143",
+    "driverId": "usr-drv-101",
+    "driverName": "Goods Driver",
+    "vehicleNumber": "Unknown",
+    "emergencyType": "hospital",
+    "timestamp": "2026-10-05T17:54:59.163Z",
+    "selectedFacility": {
+      "name": "City Care Hospital",
+      "distanceKm": 3.2
+    },
+    "alertStatus": "ALERT_PENDING",
+    "communicationStatus": "NOT_DISPATCHED",
+    "lifecycleState": "FACILITY_FOUND",
+    "updatedAt": "2026-10-05T17:54:59.163Z"
+  },
+  {
+    "incidentId": "sos-test-1791222277056",
+    "driverId": "usr-drv-101",
+    "driverName": "Goods Driver",
+    "vehicleNumber": "Unknown",
+    "emergencyType": "hospital",
+    "timestamp": "2026-10-05T17:44:37.090Z",
+    "selectedFacility": {
+      "name": "City Care Hospital",
+      "distanceKm": 3.2
+    },
+    "alertStatus": "ALERT_PENDING",
+    "communicationStatus": "NOT_DISPATCHED",
+    "lifecycleState": "FACILITY_FOUND",
+    "updatedAt": "2026-10-05T17:44:37.090Z"
+  },
+  {
+    "incidentId": "sos-test-1791217273157",
+    "driverId": "usr-drv-101",
+    "driverName": "Goods Driver",
+    "vehicleNumber": "Unknown",
+    "emergencyType": "hospital",
+    "timestamp": "2026-10-05T16:21:13.185Z",
+    "selectedFacility": {
+      "name": "City Care Hospital",
+      "distanceKm": 3.2
+    },
+    "alertStatus": "ALERT_PENDING",
+    "communicationStatus": "NOT_DISPATCHED",
+    "lifecycleState": "FACILITY_FOUND",
+    "updatedAt": "2026-10-05T16:21:13.185Z"
+  }
+]

@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fleet Operations Command · SafeRoute Logistics</title>
+    <meta name="description" content="SafeRoute Logistics fleet operations command, real-time vehicle tracking, route risk evaluation, and driver road-condition stream." />
+    
+    <!-- Multi-Language Indic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet & MapLibre Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <style>
+      /* Light-First Fleet Specific Refinements */
+      .fleet-filter-bar {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px 18px;
+        margin-bottom: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: var(--shadow-sm);
+      }
+      .fleet-filter-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      .fleet-select {
+        background: #ffffff;
+        border: 1px solid var(--line-strong);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        min-height: 38px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .fleet-select:focus {
+        border-color: var(--accent);
+      }
+      .fleet-search-input {
+        background: #ffffff;
+        border: 1px solid var(--line-strong);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        width: 220px;
+        min-height: 38px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .fleet-search-input:focus {
+        border-color: var(--accent);
+      }
+      .attention-card {
+        background: var(--bg-inset);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        transition: background-color 0.15s;
+      }
+      .attention-card:hover {
+        background: #f1f5f9;
+      }
+      .report-card-light {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .table-light-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+      }
+      table.data-light {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        text-align: left;
+      }
+      table.data-light th {
+        background: var(--bg-inset);
+        padding: 10px 14px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--line);
+      }
+      table.data-light td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        color: var(--text);
+      }
+      table.data-light tr:last-child td {
+        border-bottom: none;
+      }
+      table.data-light tr:hover td {
+        background: #f8fafc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Global Role Switcher Banner with Language Selector -->
+    <div class="role-switcher-banner">
+      <div class="role-switcher-left">
+        <span class="role-switcher-tag" data-i18n="role_logistics">🏢 Logistics</span>
+        <span style="color: var(--text-muted); font-size: 11px;">
+          Operator: <strong id="logistics-operator-name" style="color: var(--navy-dark);">P. Barua</strong> · Northeast Essential Logistics (NE8)
+        </span>
+      </div>
+      <div class="role-switcher-links">
+        <!-- Language Selector -->
+        <div class="lang-selector-wrap">
+          <span style="font-size: 13px;">🌐</span>
+          <select class="lang-select-input" aria-label="Language" onchange="window.I18N.setLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="as">অসমীয়া (Assamese)</option>
+            <option value="nishi">Nyishi</option>
+            <option value="meitei">মৈতৈলোন্ (Meitei)</option>
+            <option value="khasi">Ka Ktien Khasi</option>
+            <option value="mizo">Mizo ṭawng</option>
+            <option value="konyak">Konyak</option>
+            <option value="ne">नेपाली (Nepali)</option>
+          </select>
+        </div>
+
+        <a class="role-pill-btn" href="driver.html" data-i18n="nav_driver">Driver PWA</a>
+        <a class="role-pill-btn is-active" href="logistics.html" data-i18n="nav_logistics">Logistics Fleet</a>
+        <a class="role-pill-btn" href="official.html" data-i18n="nav_official">Official Desk</a>
+        <a class="role-pill-btn" href="index.html" data-i18n="nav_overview">Overview</a>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- Topbar -->
+      <header class="topbar">
+        <a class="brand" href="logistics.html">
+          <div class="brand-mark">SR</div>
+          <div>
+            <strong>SafeRoute Fleet Command</strong>
+            <span>Logistics Operations &amp; Route Safety</span>
+          </div>
+        </a>
+        <nav class="top-nav">
+          <a class="is-active" href="logistics.html" data-i18n="tab_dashboard">Fleet Operations</a>
+          <a href="trip-planner.html" data-i18n="nav_trip_planner">📅 Multi-Day Scheduler</a>
+          <a href="driver.html" data-i18n="nav_driver">Driver View</a>
+          <a href="official.html" data-i18n="nav_official">Official View</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="btn-sos-nav" aria-label="Emergency SOS">
+            <span class="sos-pulse-ring"></span> <span class="sos-nav-label" data-i18n="btn_sos">🚨 SOS</span>
+          </button>
+          <div class="top-meta" data-clock>--:--:--</div>
+          <button type="button" id="btn-logistics-logout" class="btn btn-secondary btn-sm" style="color: var(--red-text); border-color: var(--red-border); font-size: 11px; min-height: 32px;" data-i18n="btn_sign_out">
+            🚪 Sign Out
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace" style="max-width: 1300px; margin: 0 auto; padding: 24px 20px;">
+        <!-- Page Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 22px;">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--blue-text); border: 1px solid var(--blue-border); border-radius: 99px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">
+              🚚 <span data-i18n="role_logistics">Active Fleet Operations</span>
+            </div>
+            <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 800; color: var(--navy-dark);" data-i18n="logistics_title">
+              What is happening to my fleet right now?
+            </h1>
+            <p style="margin: 0; color: var(--text-muted); font-size: 13.5px;" data-i18n="logistics_sub">
+              Real-time vehicle telemetry, weather-hazard correlation, and active route advisories across Northeast corridors.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-fleet" style="background:#ffffff; border-color:var(--line-strong);" data-i18n="btn_refresh_fleet">
+              🔄 Refresh Fleet Status
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Summary Cards -->
+        <section class="logistics-stats-grid">
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_active_vehs">Active Vehicles</small>
+            <div class="logistics-kpi-val" style="color: var(--accent);" id="kpi-active-vehicles">5 <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">/ 12 total</span></div>
+            <small style="color: var(--green); font-size: 11.5px; font-weight: 600;" data-i18n="telemetry_gps_active">100% telemetry online</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_trips">In-Transit Trips</small>
+            <div class="logistics-kpi-val" style="color: var(--navy-dark);" id="kpi-active-trips">5</div>
+            <small style="color: var(--text-muted); font-size: 11.5px;">3 on-time, 2 delayed</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_attention">Requiring Attention</small>
+            <div class="logistics-kpi-val" style="color: var(--amber);" id="kpi-attention-vehicles">2</div>
+            <small style="color: var(--amber-text); font-size: 11.5px; font-weight: 600;">Detour &amp; road bed crawl</small>
+          </article>
+          <article class="logistics-kpi-card">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700;" data-i18n="kpi_hazards">Route Hazards</small>
+            <div class="logistics-kpi-val" style="color: var(--red);" id="kpi-active-alerts">3</div>
+            <small style="color: var(--red-text); font-size: 11.5px; font-weight: 600;">1 critical blockage on NH-37</small>
+          </article>
+        </section>
+
+        <!-- Navigation Tabs Bar -->
+        <nav class="logistics-tab-bar" id="fleet-tabs">
+          <button type="button" class="logistics-tab-btn is-active" data-tab="tab-dashboard" data-i18n="tab_dashboard">📊 Fleet Command</button>
+          <button type="button" class="logistics-tab-btn" data-tab="tab-fleet"><span data-i18n="tab_vehicles">🚚 Fleet Vehicles</span> (<span id="tab-cnt-vehs">5</span>)</button>
+          <button type="button" class="logistics-tab-btn" data-tab="tab-trips"><span data-i18n="tab_trips">🗺️ Active Journeys</span> (<span id="tab-cnt-trips">5</span>)</button>
+          <button type="button" class="logistics-tab-btn" data-tab="tab-drivers"><span data-i18n="tab_drivers">👨‍✈️ Drivers</span> (<span id="tab-cnt-drvs">5</span>)</button>
+          <button type="button" class="logistics-tab-btn" data-tab="tab-alerts"><span data-i18n="tab_alerts">🔔 Route Alerts</span> (<span id="tab-cnt-alerts">3</span>)</button>
+          <button type="button" class="logistics-tab-btn" data-tab="tab-reports"><span data-i18n="tab_reports">📋 Driver Reports</span> (<span id="tab-cnt-reports">0</span>)</button>
+        </nav>
+
+        <!-- Fleet Filter Toolbar -->
+        <div class="fleet-filter-bar">
+          <div class="fleet-filter-group">
+            <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;" data-i18n="filter_fleet">🔍 Filter Fleet:</span>
+            <div>
+              <select id="filter-fleet-corridor" class="fleet-select">
+                <option value="all" data-i18n="filter_all_corridors">All Transit Corridors</option>
+                <option value="NH-6">NH-6 (Guwahati ➔ Shillong)</option>
+                <option value="NH-27">NH-27 (Guwahati ➔ Nagaon)</option>
+                <option value="NH-37">NH-37 (Tezpur)</option>
+                <option value="NH-29">NH-29 (Dimapur ➔ Kohima)</option>
+              </select>
+            </div>
+            <div>
+              <select id="filter-fleet-risk" class="fleet-select">
+                <option value="all" data-i18n="filter_all_risk">All Risk Levels</option>
+                <option value="on_schedule">🟢 On Schedule (Low Risk)</option>
+                <option value="delayed">🟡 Delayed / Caution</option>
+                <option value="rerouted">🔴 High Risk / Rerouted</option>
+              </select>
+            </div>
+            <div>
+              <input type="text" id="filter-fleet-search" class="fleet-search-input" placeholder="Search vehicle or driver..." data-i18n-ph="ph_search_fleet" />
+            </div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;" id="filter-match-count">
+            Showing all 5 active vehicles
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 1: DASHBOARD (Fleet Map + Active Attention Stream)
+             =================================================================== -->
+        <div id="tab-dashboard" class="fleet-tab-content">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start;">
+            <!-- Live Fleet Interactive Map -->
+            <section class="card card-pad" style="padding: 0; overflow: hidden; background: #ffffff;">
+              <div style="padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                <h2 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--navy-dark); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                  <span>🗺️</span> <span data-i18n="map_live_fleet">Live Fleet Position Map</span>
+                </h2>
+                <small style="color: var(--green); font-weight: 700;" data-i18n="telemetry_gps_active">● Live GPS Telemetry Active</small>
+              </div>
+              <div id="fleet-live-map" style="height: 480px; width: 100%; background: #e2e8f0;"></div>
+            </section>
+
+            <!-- Vehicles Requiring Attention Sidebar -->
+            <div>
+              <section class="card card-pad" style="margin-bottom: 16px; background: #ffffff;">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--amber-text); display: flex; align-items: center; gap: 6px;">
+                  <span>⚠️</span> <span data-i18n="title_attention_vehicles">Vehicles Requiring Attention</span>
+                </h3>
+                <div id="fleet-attention-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+              </section>
+
+              <section class="card card-pad" style="background: #ffffff;">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);" data-i18n="title_corridor_alerts">
+                  📢 Recent Corridor Alerts
+                </h3>
+                <div id="fleet-mini-alerts" style="display: flex; flex-direction: column; gap: 8px;"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 2: FLEET VEHICLES
+             =================================================================== -->
+        <div id="tab-fleet" class="fleet-tab-content" style="display: none;">
+          <section class="card card-pad" style="background: #ffffff;">
+            <h2 style="margin: 0 0 14px 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_fleet_vehicles">Active Vehicle Fleet</h2>
+            <div class="table-light-wrap">
+              <table class="data-light">
+                <thead>
+                  <tr>
+                    <th data-i18n="col_vehicle_code">Vehicle Code</th>
+                    <th data-i18n="col_driver">Driver</th>
+                    <th data-i18n="col_cargo">Cargo Type</th>
+                    <th data-i18n="col_model">Model</th>
+                    <th data-i18n="col_location">Last Location</th>
+                    <th data-i18n="col_speed">Speed</th>
+                    <th data-i18n="col_status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="table-vehicles-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===================================================================
+             TAB 3: ACTIVE TRIPS
+             =================================================================== -->
+        <div id="tab-trips" class="fleet-tab-content" style="display: none;">
+          <section class="card card-pad" style="background: #ffffff;">
+            <h2 style="margin: 0 0 14px 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_active_trips">Assigned &amp; Active Freight Trips</h2>
+            <div class="table-light-wrap">
+              <table class="data-light">
+                <thead>
+                  <tr>
+                    <th data-i18n="col_trip_id">Trip ID</th>
+                    <th>Vehicle &amp; Driver</th>
+                    <th data-i18n="col_route">Route (Origin → Destination)</th>
+                    <th data-i18n="col_corridor">Corridor</th>
+                    <th data-i18n="col_eta">ETA &amp; Delay</th>
+                    <th data-i18n="col_progress">Progress</th>
+                    <th>Risk Assessment</th>
+                  </tr>
+                </thead>
+                <tbody id="table-trips-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===================================================================
+             TAB 4: DRIVERS
+             =================================================================== -->
+        <div id="tab-drivers" class="fleet-tab-content" style="display: none;">
+          <section class="card card-pad" style="background: #ffffff;">
+            <h2 style="margin: 0 0 14px 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_drivers_dir">Assigned Drivers Directory</h2>
+            <div class="table-light-wrap">
+              <table class="data-light">
+                <thead>
+                  <tr>
+                    <th data-i18n="col_driver">Driver Name</th>
+                    <th data-i18n="col_phone">Contact Phone</th>
+                    <th data-i18n="col_license">License Number</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Current Trip</th>
+                    <th data-i18n="col_status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="table-drivers-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===================================================================
+             TAB 5: ALERTS
+             =================================================================== -->
+        <div id="tab-alerts" class="fleet-tab-content" style="display: none;">
+          <section class="card card-pad" style="background: #ffffff;">
+            <h2 style="margin: 0 0 14px 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_corridor_alerts">Active Corridor &amp; Fleet Alerts</h2>
+            <div id="fleet-full-alerts-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </section>
+        </div>
+
+        <!-- ===================================================================
+             TAB 6: DRIVER REPORTS
+             =================================================================== -->
+        <div id="tab-reports" class="fleet-tab-content" style="display: none;">
+          <section class="card card-pad" style="background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h2 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--navy-dark);" data-i18n="title_reports_stream">Driver Road-Condition Reports Stream</h2>
+              <small style="color: var(--text-muted);" id="reports-stream-subtitle">Real-time driver submissions</small>
+            </div>
+            <div id="fleet-reports-container"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Leaflet & MapLibre GL Leaflet Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+
+    <!-- Config & Core Services -->
+    <script src="js/config.js"></script>
+    <script src="js/config/map-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/services/data-store.js"></script>
+    <script src="js/services/auth-service.js"></script>
+    <script src="js/services/gemini-service.js"></script>
+    <script src="js/services/risk-engine.js"></script>
+    <script src="js/services/ai-explanation-service.js"></script>
+    <script src="js/services/location-service.js"></script>
+    <script src="js/services/report-service.js"></script>
+    <script src="js/services/trip-service.js"></script>
+    <script src="js/services/sos-service.js"></script>
+    <script src="js/sos-ui.js"></script>
+    <script src="js/common.js"></script>
+
+    <!-- Logistics Operations Controller -->
+    <script>
+      (function () {
+        "use strict";
+
+        let fleetMap = null;
+        let vehicleMarkers = [];
+
+        function initLogisticsDashboard() {
+          // Strict RBAC route guard
+          if (window.NE8_AUTH) {
+            const authed = window.NE8_AUTH.requireAuth("logistics");
+            if (!authed) return; // redirecting to login.html with warning
+          }
+
+          const user = window.NE8_AUTH ? window.NE8_AUTH.getCurrentUser() : null;
+          if (user && user.name) {
+            const opEl = document.getElementById("logistics-operator-name");
+            if (opEl) opEl.textContent = user.name;
+          }
+
+          const btnLogout = document.getElementById("btn-logistics-logout");
+          if (btnLogout && window.NE8_AUTH) {
+            btnLogout.addEventListener("click", () => {
+              window.NE8_AUTH.logout();
+            });
+          }
+
+          setupTabs();
+          renderStats();
+          renderTables();
+          renderAttentionVehicles();
+          renderAlerts();
+          renderReports();
+          initFleetMap();
+
+          // Refresh button
+          const btnRefresh = document.getElementById("btn-refresh-fleet");
+          if (btnRefresh) {
+            btnRefresh.addEventListener("click", () => {
+              renderStats();
+              renderTables();
+              renderAttentionVehicles();
+              renderAlerts();
+              renderReports();
+              updateFleetMapMarkers();
+            });
+          }
+
+          // Listen for live data changes
+          window.addEventListener("ne8:data-changed", () => {
+            renderStats();
+            renderTables();
+            renderAttentionVehicles();
+            renderAlerts();
+            renderReports();
+            updateFleetMapMarkers();
+          });
+
+          // Re-render text & numbers on language switch
+          window.addEventListener("saferoute:lang-changed", () => {
+            renderStats();
+            renderTables();
+            renderAttentionVehicles();
+            renderAlerts();
+            renderReports();
+          });
+        }
+
+        function setupTabs() {
+          const tabBtns = document.querySelectorAll(".logistics-tab-btn");
+          const tabContents = document.querySelectorAll(".fleet-tab-content");
+
+          tabBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const targetId = btn.dataset.tab;
+              tabBtns.forEach((b) => b.classList.remove("is-active"));
+              tabContents.forEach((c) => (c.style.display = "none"));
+
+              btn.classList.add("is-active");
+              const target = document.getElementById(targetId);
+              if (target) {
+                target.style.display = "block";
+                if (targetId === "tab-dashboard" && fleetMap) {
+                  setTimeout(() => fleetMap.invalidateSize(), 200);
+                }
+              }
+            });
+          });
+        }
+
+        function renderStats() {
+          const vehs = window.NE8_DATA_STORE.getVehicles();
+          const trips = window.NE8_DATA_STORE.getTrips();
+          const alerts = window.NE8_DATA_STORE.getAlerts();
+          const reports = window.NE8_DATA_STORE.getRoadReports({ includeDeleted: false });
+          const drvs = window.NE8_DATA_STORE.getDrivers();
+
+          const delayedVehs = vehs.filter((v) => v.status === "delayed" || v.status === "rerouted").length;
+
+          const vehEl = document.getElementById("kpi-active-vehicles");
+          if (vehEl) vehEl.innerHTML = `${vehs.length} <span style="font-size:14px; color:var(--text-muted); font-weight:500;">/ 12 total</span>`;
+          
+          const tripEl = document.getElementById("kpi-active-trips");
+          if (tripEl) tripEl.textContent = String(trips.length);
+          
+          const attEl = document.getElementById("kpi-attention-vehicles");
+          if (attEl) attEl.textContent = String(delayedVehs);
+          
+          const alEl = document.getElementById("kpi-active-alerts");
+          if (alEl) alEl.textContent = String(alerts.length);
+
+          const cntVehs = document.getElementById("tab-cnt-vehs");
+          if (cntVehs) cntVehs.textContent = String(vehs.length);
+          
+          const cntTrips = document.getElementById("tab-cnt-trips");
+          if (cntTrips) cntTrips.textContent = String(trips.length);
+          
+          const cntDrvs = document.getElementById("tab-cnt-drvs");
+          if (cntDrvs) cntDrvs.textContent = String(drvs.length);
+          
+          const cntAlerts = document.getElementById("tab-cnt-alerts");
+          if (cntAlerts) cntAlerts.textContent = String(alerts.length);
+          
+          const cntReps = document.getElementById("tab-cnt-reports");
+          if (cntReps) cntReps.textContent = String(reports.length);
+        }
+
+        function renderAttentionVehicles() {
+          const vehs = window.NE8_DATA_STORE.getVehicles();
+          const trips = window.NE8_DATA_STORE.getTrips();
+          const container = document.getElementById("fleet-attention-list");
+          if (!container) return;
+
+          const attentionItems = vehs.filter((v) => v.status === "delayed" || v.status === "rerouted");
+
+          if (attentionItems.length === 0) {
+            container.innerHTML = `<div style="font-size:13px; color:var(--text-muted); padding:12px; text-align:center; background:var(--bg-inset); border-radius:6px;">All vehicles moving on schedule.</div>`;
+            return;
+          }
+
+          container.innerHTML = attentionItems.map((v) => {
+            const trip = trips.find((t) => t.vehicleId === v.id);
+            const statusBorder = v.status === "rerouted" ? "var(--red)" : "var(--amber)";
+            const statusClass = v.status === "rerouted" ? "pill-risk" : "pill-caution";
+            return `
+              <div class="attention-card" style="border-left: 4px solid ${statusBorder};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <strong style="color:var(--navy-dark); font-size:13.5px;">${v.icon} ${v.code}</strong>
+                  <span class="pill ${statusClass}">${v.status.toUpperCase()}</span>
+                </div>
+                <div style="font-size:12.5px; color:var(--text); margin-bottom:4px; font-weight:500;">${v.statusNote}</div>
+                <small style="color:var(--text-muted); font-size:11.5px; display:block;">
+                  Route: ${trip ? `${trip.origin} → ${trip.destination}` : "Corridor Transit"}
+                </small>
+              </div>
+            `;
+          }).join("");
+        }
+
+        function renderAlerts() {
+          const alerts = window.NE8_DATA_STORE.getAlerts(6);
+          const miniContainer = document.getElementById("fleet-mini-alerts");
+          const fullContainer = document.getElementById("fleet-full-alerts-list");
+
+          if (miniContainer) {
+            miniContainer.innerHTML = alerts.slice(0, 3).map((a) => `
+              <div style="background:var(--bg-inset); border:1px solid var(--line); border-radius:6px; padding:10px 12px;">
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:3px;">
+                  <strong style="color:var(--navy-dark);">${a.icon} ${a.type}</strong>
+                  <span style="color:var(--text-muted);">${new Date(a.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</span>
+                </div>
+                <div style="font-size:12.5px; color:var(--text); font-weight:500;">${a.title}</div>
+              </div>
+            `).join("");
+          }
+
+          if (fullContainer) {
+            fullContainer.innerHTML = alerts.map((a) => {
+              const borderCol = a.severity === 'CRITICAL' ? 'var(--red)' : 'var(--amber)';
+              const badgeClass = a.severity === 'CRITICAL' ? 'pill-risk' : 'pill-caution';
+              return `
+                <div class="card" style="padding:16px; background:#ffffff; border:1px solid var(--line); border-left:4px solid ${borderCol};">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:20px;">${a.icon}</span>
+                      <strong style="color:var(--navy-dark); font-size:14.5px;">${a.title}</strong>
+                    </div>
+                    <span class="pill ${badgeClass}">${a.severity}</span>
+                  </div>
+                  <p style="margin:0 0 8px 0; font-size:13px; color:var(--text);">${a.description}</p>
+                  <div style="font-size:11.5px; color:var(--text-muted); display:flex; justify-content:space-between; border-top:1px solid var(--line); padding-top:6px;">
+                    <span>📍 Location: ${a.location}</span>
+                    <span>🕒 Source: ${a.source} · ${new Date(a.timestamp).toLocaleTimeString()}</span>
+                  </div>
+                </div>
+              `;
+            }).join("");
+          }
+        }
+
+        function renderReports() {
+          const reports = window.NE8_DATA_STORE.getRoadReports({ includeDeleted: false });
+          const container = document.getElementById("fleet-reports-container");
+          if (!container) return;
+
+          if (reports.length === 0) {
+            container.innerHTML = `
+              <div style="text-align:center; padding:36px 16px; color:var(--text-muted); background:var(--bg-inset); border-radius:8px; border:1px dashed var(--line);">
+                <span style="font-size:32px; display:block; margin-bottom:8px;">📋</span>
+                <strong style="color:var(--navy-dark);">No Driver Hazard Reports On File</strong>
+                <p style="font-size:12.5px; margin:4px 0 0 0;">Reports submitted by drivers on the Driver PWA appear here in real-time.</p>
+              </div>`;
+            return;
+          }
+
+          container.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:14px;">
+              ${reports.map((r) => `
+                <div class="report-card-light">
+                  <div>
+                    ${r.photoUrl ? `<img src="${r.photoUrl}" style="width:100%; height:140px; object-fit:cover; border-radius:6px; margin-bottom:10px;" alt="Hazard Photo" />` : ''}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <strong style="color:var(--navy-dark); font-size:14px;">${r.title}</strong>
+                      <span class="pill pill-${r.riskLevel}">${r.riskLevel.toUpperCase()}</span>
+                    </div>
+                    <p style="font-size:12.5px; color:var(--text); margin:0 0 8px 0; line-height:1.4;">${r.description}</p>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--text-muted); border-top:1px solid var(--line); padding-top:8px; margin-top:6px;">
+                    <div>📍 ${r.state} · ${r.lat.toFixed(3)}°, ${r.lng.toFixed(3)}°</div>
+                    <div>🕒 Filed by: ${r.driverName} (${new Date(r.timestamp).toLocaleTimeString()})</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>`;
+        }
+
+        function setupFilters() {
+          const corridorSel = document.getElementById("filter-fleet-corridor");
+          const riskSel = document.getElementById("filter-fleet-risk");
+          const searchInput = document.getElementById("filter-fleet-search");
+
+          const applyFilters = () => {
+            renderTables();
+            updateFleetMapMarkers();
+          };
+
+          if (corridorSel) corridorSel.addEventListener("change", applyFilters);
+          if (riskSel) riskSel.addEventListener("change", applyFilters);
+          if (searchInput) searchInput.addEventListener("input", applyFilters);
+        }
+
+        function getFilteredVehicles() {
+          let vehs = window.NE8_DATA_STORE.getVehicles();
+          const trips = window.NE8_DATA_STORE.getTrips();
+          const drvs = window.NE8_DATA_STORE.getDrivers();
+
+          const corridorVal = document.getElementById("filter-fleet-corridor")?.value || "all";
+          const riskVal = document.getElementById("filter-fleet-risk")?.value || "all";
+          const searchVal = (document.getElementById("filter-fleet-search")?.value || "").toLowerCase().trim();
+
+          if (corridorVal !== "all") {
+            vehs = vehs.filter((v) => {
+              const trip = trips.find((t) => t.vehicleId === v.id);
+              return trip && trip.corridor && trip.corridor.toLowerCase().includes(corridorVal.toLowerCase());
+            });
+          }
+
+          if (riskVal !== "all") {
+            vehs = vehs.filter((v) => v.status === riskVal);
+          }
+
+          if (searchVal) {
+            vehs = vehs.filter((v) => {
+              const drv = drvs.find((d) => d.id === v.driverId);
+              return (
+                v.code.toLowerCase().includes(searchVal) ||
+                v.vehicleNo.toLowerCase().includes(searchVal) ||
+                (drv && drv.name.toLowerCase().includes(searchVal))
+              );
+            });
+          }
+
+          const countEl = document.getElementById("filter-match-count");
+          if (countEl) {
+            countEl.textContent = `Showing ${vehs.length} of ${window.NE8_DATA_STORE.getVehicles().length} vehicles`;
+          }
+
+          return vehs;
+        }
+
+        function renderTables() {
+          const vehs = getFilteredVehicles();
+          const trips = window.NE8_DATA_STORE.getTrips();
+          const drvs = window.NE8_DATA_STORE.getDrivers();
+
+          // Vehicles Table
+          const vBody = document.getElementById("table-vehicles-body");
+          if (vBody) {
+            if (vehs.length === 0) {
+              vBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">No vehicles match current filters.</td></tr>`;
+            } else {
+              vBody.innerHTML = vehs.map((v) => `
+                <tr>
+                  <td><strong style="color:var(--navy-dark);">${v.icon} ${v.code}</strong> <small style="color:var(--text-muted);">(${v.vehicleNo})</small></td>
+                  <td>${drvs.find((d) => d.id === v.driverId)?.name || "Assigned Driver"}</td>
+                  <td><small style="font-weight:600;">${v.cargoLabel}</small></td>
+                  <td>${v.model}</td>
+                  <td><small style="font-family:var(--mono);">${v.currentLat.toFixed(3)}°, ${v.currentLng.toFixed(3)}°</small></td>
+                  <td><strong>${v.speedKm || 0}</strong> km/h</td>
+                  <td><span class="pill ${v.status === 'on_schedule' ? 'pill-safe' : v.status === 'delayed' ? 'pill-caution' : 'pill-risk'}">${v.status.replace("_", " ").toUpperCase()}</span></td>
+                </tr>
+              `).join("");
+            }
+          }
+
+          // Trips Table (Filtered by matching vehicles)
+          const tBody = document.getElementById("table-trips-body");
+          if (tBody) {
+            const filteredTrips = trips.filter((t) => vehs.some((v) => v.id === t.vehicleId));
+            if (filteredTrips.length === 0) {
+              tBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">No active journeys match current filters.</td></tr>`;
+            } else {
+              tBody.innerHTML = filteredTrips.map((t) => `
+                <tr>
+                  <td><strong style="color:var(--navy-dark); font-family:var(--mono);">${t.code}</strong></td>
+                  <td><strong>${t.vehicleCode}</strong> <small>(${t.driverName})</small></td>
+                  <td>${t.origin} ➔ ${t.destination}</td>
+                  <td><small style="font-weight:600;">${t.corridor}</small></td>
+                  <td><strong style="color:var(--accent);">${t.eta}</strong></td>
+                  <td>${t.progressPercent || 50}%</td>
+                  <td><span class="pill pill-${t.riskLevel}">${t.riskLevel.toUpperCase()}</span></td>
+                </tr>
+              `).join("");
+            }
+          }
+
+          // Drivers Table
+          const dBody = document.getElementById("table-drivers-body");
+          if (dBody) {
+            dBody.innerHTML = drvs.map((d) => `
+              <tr>
+                <td><strong style="color:var(--navy-dark);">${d.name}</strong></td>
+                <td>${d.phone}</td>
+                <td><small style="font-family:var(--mono);">${d.license}</small></td>
+                <td><strong>${vehs.find((v) => v.id === d.vehicleId)?.code || "Unassigned"}</strong></td>
+                <td>${d.activeTripId || "Available"}</td>
+                <td><span class="pill ${d.status === 'on_trip' ? 'pill-safe' : 'pill-caution'}">${d.status.replace("_", " ").toUpperCase()}</span></td>
+              </tr>
+            `).join("");
+          }
+        }
+
+        function initFleetMap() {
+          const mapEl = document.getElementById("fleet-live-map");
+          if (!mapEl || typeof L === "undefined") return;
+
+          fleetMap = L.map("fleet-live-map", { attributionControl: true }).setView([25.8, 92.8], 8);
+
+          if (window.SafeRouteMap && window.SafeRouteMap.createTileLayer) {
+            window.SafeRouteMap.createTileLayer().addTo(fleetMap);
+            window.SafeRouteMap.attachTileErrorBanner(fleetMap, "fleet-live-map");
+          } else {
+            L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+              attribution: '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+              maxZoom: 19,
+              crossOrigin: true,
+            }).addTo(fleetMap);
+          }
+
+          window.addEventListener("resize", () => {
+            if (fleetMap) fleetMap.invalidateSize();
+          });
+
+          setupFilters();
+          updateFleetMapMarkers();
+        }
+
+        function updateFleetMapMarkers() {
+          if (!fleetMap) return;
+
+          vehicleMarkers.forEach((m) => fleetMap.removeLayer(m));
+          vehicleMarkers = [];
+
+          const vehs = getFilteredVehicles();
+          const trips = window.NE8_DATA_STORE.getTrips();
+
+          vehs.forEach((v) => {
+            const trip = trips.find((t) => t.vehicleId === v.id);
+            const iconBg = v.status === "rerouted" ? "#ef4444" : v.status === "delayed" ? "#f59e0b" : "#10b981";
+
+            const customMarkerIcon = L.divIcon({
+              html: `<div style="background:${iconBg}; border:2.5px solid #ffffff; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(15,23,42,0.25);">
+                ${v.icon}
+              </div>`,
+              className: "fleet-map-pin",
+              iconSize: [36, 36],
+              iconAnchor: [18, 18],
+            });
+
+            const marker = L.marker([v.currentLat, v.currentLng], { icon: customMarkerIcon }).addTo(fleetMap);
+            marker.bindPopup(`
+              <div style="font-family:var(--font, sans-serif); min-width:190px; color:#0f172a; padding:4px;">
+                <strong style="font-size:14px; display:block; color:#0f172a;">${v.icon} ${v.code}</strong>
+                <small style="color:#64748b;">${v.vehicleNo} · ${v.cargoLabel}</small>
+                <div style="margin-top:8px; font-size:12px; line-height:1.4;">
+                  <strong>Status:</strong> ${v.statusNote}<br/>
+                  <strong>Speed:</strong> ${v.speedKm} km/h<br/>
+                  <strong>Route:</strong> ${trip ? `${trip.origin} ➔ ${trip.destination}` : "Hill Transit"}
+                </div>
+              </div>
+            `);
+            vehicleMarkers.push(marker);
+          });
+        }
+
+        document.addEventListener("DOMContentLoaded", initLogisticsDashboard);
+      })();
+    </script>
+  </body>
+</html>
